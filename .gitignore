@@ -1,0 +1,8 @@
+.project
+.cproject
+.settings
+.build
+dualSwan.arm9
+dualSwan.elf
+dualSwan.nds
+
