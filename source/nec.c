@@ -1,6 +1,6 @@
 #include "nec.h"
 
-s32 nec_ICount;
+int nec_ICount;
 static nec_Regs I;
 static u32 prefix_base;
 s8 seg_prefix;

@@ -33,17 +33,17 @@ void handleVBlank()
 void videoInit(void)
 {	
 	int i=0, j;
-		
+
 		// Power up
-	powerON(POWER_ALL_2D);
-		
+	powerOn(POWER_ALL_2D);
+
 		// Bottom screen for text
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 		
 		// Set up VRAM banks
-	vramSetBankA(VRAM_A_MAIN_BG_0x6000000); 
+	vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
 	vramSetBankB(VRAM_B_MAIN_SPRITE); 
-	vramSetBankC(VRAM_C_SUB_BG_0x6200000);
+	vramSetBankC(VRAM_C_SUB_BG_0x06200000);
 		
 		// Clearing VRAM for M3/SC/G6 - size of two tile bases (32Kbyte)
 	memset((u16*)0x06000000, 0, 32 << 10);
@@ -70,7 +70,7 @@ void videoInit(void)
 	*(vu16*)0x04000054 = ~0;
 		
 		// sub screen, text.
-	SUB_BG0_CR = BG_MAP_BASE(31);
+	REG_BG0CNT = BG_MAP_BASE(31);
 	dmaCopy(font_bin, (u16*)BG_TILE_RAM_SUB(0), font_bin_size);
 	BG_PALETTE_SUB[1] = ~0;
 	BG_PALETTE_SUB[17] = 0x03E0;

@@ -216,10 +216,10 @@ bool disc_setGbaSlotInterface (void)
 	// the GBA cart. First implemented by SaTa.
 #ifdef NDS
  #ifdef ARM9
-	WAIT_CR &= ~(0x8080);
+	REG_EXMEMCNT &= ~(0x8080);
  #endif
  #ifdef ARM7
-	WAIT_CR |= (0x8080);
+	REG_EXMEMSTAT |= (0x8080);
  #endif
 #endif
 
@@ -303,10 +303,10 @@ bool disc_setGbaSlotInterface (void)
 bool disc_setDsSlotInterface (void)
 {
 #ifdef ARM9
-	WAIT_CR &= ~(1<<11);
+	REG_EXMEMCNT &= ~(1<<11);
 #endif
 #ifdef ARM7
-	WAIT_CR |= (1<<11);
+	REG_EXMEMSTAT |= (1<<11);
 #endif
 
 #ifdef SUPPORT_NMMC

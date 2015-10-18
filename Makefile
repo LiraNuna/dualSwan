@@ -17,7 +17,7 @@ include $(DEVKITARM)/ds_rules
 # INCLUDES is a list of directories containing header files
 #---------------------------------------------------------------------------------
 TARGET		:=	$(shell basename $(CURDIR))
-BUILD		:=	build
+BUILD		:=	.build
 SOURCES		:=	source source/nec source/fat
 DATA		:=	data
 INCLUDES	:=	include
@@ -32,7 +32,7 @@ CFLAGS	+=	$(INCLUDE) -DARM9
 CXXFLAGS:= $(CFLAGS)
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -mno-fpu -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

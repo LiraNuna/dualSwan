@@ -49,19 +49,19 @@ int spi_freq = 3;
 
 static inline void Neo_OpenSPI( u8 frequency )
 {
-	CARD_CR1 = 0x0000A040 | frequency;
+	REG_AUXSPICNT = 0x0000A040 | frequency;
 }
 
 static inline u8 Neo_SPI( u8 dataByte )
 {
-	CARD_EEPDATA = dataByte;
-	while (CARD_CR1 & 0x80);		// card busy
-	return CARD_EEPDATA;
+	REG_AUXSPIDATA = dataByte;
+	while (REG_AUXSPICNT & 0x80);		// card busy
+	return REG_AUXSPIDATA;
 }
 
 static inline void Neo_CloseSPI ( void )
 {
-	CARD_CR1 = 0;
+	REG_AUXSPICNT = 0;
 }
 
 static inline void Neo_MK2GameMode()	{
@@ -108,8 +108,8 @@ void Neo_SelectMMC (u8 dataByte)
 {
 	selectMMC_command[1] = dataByte;	// Set enable / disable byte
 	cardWriteCommand (selectMMC_command);	// Send "5. Use the EEPROM CS to access the MK2 MMC/SD card"
-	CARD_CR2 = CARD_ACTIVATE | CARD_nRESET;
-	while (CARD_CR2 & CARD_BUSY);
+	REG_ROMCTRL = CARD_ACTIVATE | CARD_nRESET;
+	while (REG_ROMCTRL & CARD_BUSY);
 	return;
 }
 

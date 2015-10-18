@@ -20,7 +20,6 @@
 #define UINT16	unsigned short
 #define UINT32	unsigned long
 
-#include <nds/jtypes.h>
 #include <nds.h>
 
 #include <string.h>
