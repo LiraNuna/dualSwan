@@ -1,0 +1,4863 @@
+------------------------------------------------------------------------
+
+  80x86 Operation Codes
+
+------------------------------------------------------------------------
+
+[Last change: 3/12/95]
+
+------------------------------------------------------------
+This is DOC 'bout undocument command and document command
+of any last processors. And 'bout some registers and
+Chip specified stuffs.
+------------------------------------------------------------
+ (C) (P) Potemkin's Hackers Group 1994,1995
+------------------------------------------------------------
+Revision 1.22		     24 February 1995
+------------------------------------------------------------
+All Your messages send to ->
+E-mail: avp@iron.misa.ac.ru
+AirMail:
+	111538 RUSSIA,	Moscow
+	P.O.	    box 430
+	Potemkin's Hackers Group
+-------------------------------------------------------------
+
+
+---------------------------------------------------
+AAA   -	 ASCII adjust AX after addition
+
+
+CPU:  8086+
+
+Type of Instruction: User
+
+Instruction:  AAA   ; (no operands)
+
+
+Description:
+
+	IF ((( AL and 0FH ) > 9 ) or (AF==1)
+	THEN {
+		IF CPU<286 THEN {  AL <- AL+6 }
+				ELSE {  AX <- AX+6 }
+		AH <- AH+1
+		CF <- 1
+		AF <- 1
+	} ELSE {
+		CF <- 0
+		AF <- 0
+	}
+	AL <- AL and 0Fh
+
+
+Note: This istruction incorrectly documented in Intel's materials.
+		See description field.
+
+Flags Affected:	AF,CF	    (modified)
+		OF,SF,ZF,PF (undefined)
+
+
+CPU mode: RM,PM,VM,SMM
+
++++++++++++++++++++++++
+Physical Form:
+COP (Code of Operation)	 : 37H
+
+Clocks:
+		AAA
+8086:		4
+8088:		4
+80186:		8
+80286:		3
+80386:		4
+i486:		3
+Pentium:	3
+
+Cx486SLC:	4
+Cx486DX:	4
+IBM 486BL3X:	4
+UMC U5S:	1
+
+
+---------------------------------------------------
+AAD    - ASCII adjust AX before Division
+
+CPU:  8086+
+
+Type of Instruction: User
+
+Instruction:  AAD basen
+
+
+Description:
+		AL <- (AH*basen) + AL
+		AH <- 0
+
+
+
+Flags Affected: SF,ZF,PF	(modified)
+		OF,AF,CF	(undefined)
+
+CPU mode: RM,PM,VM,SMM
+
+Note:	AAD	without operands means AAD with operand 0AH.
+
+Note: NECs understand only AAD 0AH form.
+
++++++++++++++++++++++++
+
+Physical Form: AAD imm8
+
+COP (Code of Operation)	 : D5H	imm8
+
+Clocks:		AAD 0AH
+8086:		60
+80186:		15
+80286:		14
+80386:		19
+i486:		14
+Pentium:	10
+
+Cx486SLC:	4
+Cx486DX:	4
+
+IBM 486BL3X:	15
+UMC	U5S:	11
+
+---------------------------------------------------
+AAM    - ASCII adjust AX after Multiply
+
+CPU:  8086+
+
+Type of Instruction: User
+
+Instruction:  AAM basen
+
+
+Description:
+		AH <- AL  / basen
+		AL <- AL MOD basen
+
+
+
+Flags Affected: SF,ZF,PF	(modified)
+		OF,AF,CF	(undefined)
+
+CPU mode: RM,PM,VM,SMM
+
+Note:	AAM	without operands means AAM with operand 0AH.
+
+WARNING: NECs understand only AAM 0Ah form.
+
++++++++++++++++++++++++
+
+Physical Form: AAM imm8
+
+COP (Code of Operation)	 : D4H	imm8
+
+Clocks:		AAM 0AH
+8086:		83
+80186:		19
+80286:		16
+80386:		17
+i486:		15
+Pentium:	18
+
+Cx486SLC:	16
+Cx486DX:	16
+
+IBM 486BL3X:	17
+UMC	U5S:	12
+
+---------------------------------------------------
+ADD4S  -  Addition for packed BCD strings
+
+
+CPU: NEC V20/V30
+
+Type of Instruction: User
+
+Instruction:  ADD4S
+
+
+Description:
+
+	BCD STRING (ADDRESS=ES:DI,LENGTH=CL) <-
+	  BCD STRING (ADDRESS=DS:SI,LENGTH=CL) +
+	  BCD STRING (ADDRESS=ES:DI,LENGTH=CL);
+
+Note:	si,di, other registers not changed
+
+Flags Affected: OF,CF,ZF
+	;;  ZF set if both strings are zeros.
+	;;  CF,OF set as result of operation with most
+	;;  signification BCDs.
+
+CPU mode: RM
+
++++++++++++++++++++++++
+Physical Form:
+COP (Code of Operation)	 : 0FH 20H
+
+Clocks:
+		ADD4S
+NEC V20:	~19*(CL/2)+7
+
+---------------------------------------------------
+BOUND	-  Chack Array Index Against Bounds
+
+CPU:  80186+,NECs
+
+Type of Instruction: User - HLL support
+
+Instruction:  BOUND index,bound_array
+
+
+Description:
+
+		 IF (index < (opsize ptr [bound_array]))
+			 OR
+			 (index > (opsize ptr [bound_array+opsize]))
+		 THEN  INT 5;
+
+
+
+Flags Affected: No Flags Affected
+
+CPU mode: RM,PM,VM,SMM
+
+Note:	 (186s&NECs) saved CS:IP BOUND interrupt as pointer to following
+		instruction that self.
+	 (286+) saved as pointer to BOUND instruction.
+
+
+
++++++++++++++++++++++++
+
+Physical Form: BOUND reg16,mem32
+			 BOUND reg32,mem64
+
+COP (Code of Operation)	 : 62H	Postbyte
+Note: for 32bit op. add Pfix 66h if in 16bit mode
+
+Clocks:		BOUND reg16,mem16
+		In Range	Out Range
+80186:				33-35
+80286:		13		int+13
+80386:		10
+i486:		7
+Pentium:	8		int+32
+
+Cx486SLC:	11		int+11
+Cx486DX:	11		int+11
+
+
+
+---------------------------------------------------
+BSWAP  - Bytes Swap
+
+
+CPU:  I486 +
+
+Type of Instruction: User
+
+Instruction: BSWAP dwordr
+
+Description:
+
+		  XCHG  BYTE dwordr[31:24],dwordr[7:0]
+		  XCHG  BYTE dwordr[23:16],dwordr[15:8]
+
+	     ; Need Good Picture to Show It
+ 
+Notes: This instruction used for converting big-endian
+(Intel) format to little-endian (Motorolla etc.) format.
+ 
+ 
+Flags Affected: None
+CPU mode: RM,PM,VM,SMM
+ 
+Physical Form:		 BSWAP r32
+COP (Code of Operation): 0FH 11001rrr  (For 32bit segment)
+Clocks: Cyrix Cx486SLC : 4
+	      i486     : 1
+	      Pentium  : 1
+	Cyrix Cx486DX  : 4
+	UMC   U5S      : 2
+	IBM 486BL3X    : 9
+---------------------------------------------------
+CALLN	  - Call Native Mode Routine
+ 
+ 
+CPU: NEC/Sony V20/V30 etc
+ 
+Type of Instruction: System
+ 
+Instruction:  CALLN intnum
+ 
+ 
+Description:
+	CALLN instruction call (interrupt service in Native Mode)
+	from 8080 emulation mode:
+		PUSH	FLAGS
+		PUSH	CS
+		PUSH	IP
+		IF <- 0
+		TF <- 0
+		MD <- 1
+		MOV	CS,0:[intnum*4+2]
+		MOV	IP,0:[intnum*4]
+ 
+ 
+ 
+Flags Affected: IF,TF,MD
+ 
+CPU mode: 8080 Emulation
+ 
++++++++++++++++++++++++
+Physical Form: CALLN imm8
+COP (Code of Operation)	 : EDH EDH imm8
+ 
+Clocks:
+NEC V20/V30:	38-58
+ 
+ 
+---------------------------------------------------
+CMPXCHG8B  - Compare and exchange 8 bytes
+ 
+ 
+CPU:  Pentium (tm)
+ 
+Type of Instruction: Operation
+ 
+Instruction: CMPXCHG8B dest
+ 
+Note: dest is memory operand: QWORD PTR [memory]
+ 
+Description:
+ 
+	IF ( QWORD(EDX:EAX) = dest) THEN
+		     {
+		     ZF <- 1;
+		     dest <- QWORD(ECX:EBX);
+		     }
+	       ELSE
+		     {
+		     ZF <- 0;
+		     EDX:EAX <- dest
+		     }
+	  END
+ 
+Flags Affected:	 ZF
+ 
+CPU mode: RM,PM,VM,SMM
+ 
+Physical Form:		   CMPXCHG8B mem64
+COP (Code of Operation)	 : 0FH C7H Postbyte
+Clocks:	      Pentium	 : 10
+ 
+Note: Postbyte MMRRRMMM:  MM<>11 if (==) then INT 6
+ 
+---------------------------------------------------
+CMPXCHG	 - Compare and exchange
+ 
+ 
+ 
+CPU:  i486+
+ 
+Type of Instruction: User
+ 
+Instruction: CMPXCHG dest,sorc
+ 
+ 
+Description:
+ 
+	Acc = if OperationSize(8)  -> AL
+		 OperationSize(16) -> AX
+		 OperationSize(32) -> EAX
+ 
+	IF ( Acc = dest) THEN
+		     {
+		     ZF <- 1;
+		     dest <- sorc;
+		     }
+	       ELSE
+		     {
+		     ZF <- 0;
+		     Acc <- dest;
+		     }
+	  END
+ 
+Note: This instruction used to support semaphores
+ 
+ 
+Flags Affected:	 ZF ( see description)
+		 OF,SF,AF,PF,CF ( like CMP instruction ) ( see description)
+ 
+CPU mode: RM,PM,VM,SMM
+ 
++++++++++++++++++++++++
+Physical Form:		   CMPXCHG  r/m8,r8
+COP (Code of Operation)	 : 0FH A6H Postbyte    ; i486 (A-B0 step)
+			 : 0FH B0H Postbyte    ; i486 (B1+ step clones
+					       ;      and upgrades)
+ 
+Clocks:
+	   Intel i486	 :  6/7	 if compare OK
+			 :  6/10 if compare FAIL
+	 Cyrix Cx486SLC	 :  5/7
+	 Pentium (tm)	 :  6
+ 
+Penalty if cache miss	 :
+	  Intel i486	 : 2
+	 Cyrix Cx486SLC	 : 1
++++++++++++++++++++++
+Physical Form:		   CMPXCHG  r/m16,r16
+			   CMPXCHG  r/m32,r32
+COP (Code of Operation)	 : 0FH A7H Postbyte    ; i486 (A-B0 step)
+			 : 0FH B1H Postbyte    ; i486 (B1+ step clones
+					       ;      and upgrades)
+ 
+Clocks:
+	   Intel i486	 :  6/7	 if compare OK
+			 :  6/10 if compare FAIL
+	 Cyrix Cx486SLC	 :  5/7
+	 Pentium (tm)	 :  6
+ 
+Penalty if cache miss	 :
+	  Intel i486	 : 2
+	 Cyrix Cx486SLC	 : 1
+ 
+ 
+ 
+---------------------------------------------------
+CPUID - CPU Identification
+ 
+ 
+CPU:  Intel 486DX/SX/DX2 SL Enhanced and all later
+Intel processors include ( IntelDX4, IntelSX2,
+Pentium etc.), UMC microprocessors: U5S,U5SD,U5S-VL.
+ 
+Note: i.e.  1993+ years processors produced by Intel
+Note: To know if your CPU support CPUID instruction
+try to set ID flag ( bit 21 of EFLAGS ) to 1, and
+if it sets this mean that CPUID support.(Soft).
+Or If Your CPU is Intel Look for '&E' signature on
+Top side of Chip.(Hard)
+ 
+Type of Instruction: Operation
+ 
+Instruction: CPUID
+ 
+Description:
+ 
+	IF (EAX=0) THEN
+	      {
+	      EAX <- Maximum value of EAX to CALL CPUID instruction
+		    1 for all processors (date 1 September 1994)
+		    may be >1 in future microprocessors
+ 
+	      ;; EBX,EDX and ECX contain a OEM name string
+	      ;; for Intel this string is 'GenuineIntel'
+ 
+		   EBX <- 756E6547H i.e. 'Genu'
+		   EDX <- 49656E69H i.e. 'ineI'
+		   ECX <- 6C65746EH i.e. 'ntel'
+ 
+	      ;; for UMC   this string is 'UMC UMC UMC '
+ 
+		   EBX <- 32434D55H i.e. 'UMC '
+		   EDX <- 32434D55H i.e. 'UMC '
+		   ECX <- 32434D55H i.e. 'UMC '
+ 
+	      }
+	ELSEIF (EAX=1) THEN
+	      {
+	      EAX[3:0]	<- Stepping ID
+	      EAX[7:4]	<- Model
+	      EAX[11:8] <- Family
+		     ;	4 - i486 family
+		     ;	5 - Pentium family
+	      EAX[15:12] <- Reserved
+		     ;	set to 0 now
+		     ;	but I'm sure that for Pentium OverDrive for P54C
+		     ;this field will be set to 1
+	      EAX[31:16] <- Reserved and set to 0s now
+ 
+	      EDX <- Compability flags
+	      ;; below all info if bit flag =1
+		 EDX[0] <- FPU on Chip
+		 EDX[1] <- Virtual Mode Extention present
+		 EDX[2] <- CPU support I/O Breakpoints
+		 EDX[3] <- CPU support	4MB size pages
+		 EDX[4] <- TSC present (See RDTSC command)
+		 EDX[5] <- CPU have Pentium Compatible MSR
+			   (Model Specified Registers.
+		 EDX[6] <- Reserved (=0 now)
+		 EDX[7] <- Machine Check exception
+		 EDX[8] <- CMPXCHG8B instruction
+		 EDX[9] <- APIC on Chip
+		 EDX[31:10] <- Reserved and set to 0s now
+	      }
+	ELSEIF ( EAX > 1 ) THEN
+	      {
+	      EAX,EBX,ECX,EDX <- Undefined
+	      }
+	END.
+ 
+ 
+Global Note:
+	   This file contain open i.e nonconfiderential information about
+	   CPUID information.
+	   If you want MORE try to contact Intel, may be (but I'm sure that not)
+	     Intelers give you "Yellow Pages" (i.e Supplement to Pentium(tm)
+	     Processor User's Manual) to read inside office.
+ 
+Refer to:  Appendix B for more informations about CPU codes.
+ 
+Here is 3 examples of Information we can may get from CPUID instruction:
+ 
+1) UMC U5S
+   Note: All UMC Chips: U5S,U5SD, 3V chips never have FPU on-chip,
+	 and never support VME
+ 
+ 
+CPUID return CPUID information
+Maximum Available of CPUID info entrys:1
+Vendor string is : "UMC UMC UMC "
+ 
+Model Info :
+Stepping ID is : 3
+Model	       : 2
+Family	       : 4
+M field	       : 0
+Compability Flags:
+FPU on Chip			   :-
+Virtual Mode Extensions present	   :-
+CPU support I/O breakpoints	   :-
+CPU support 4MB pages		   :-
+Time Stamp Counter Presents	   :-
+CPU have Pentium compatible MSRs   :-
+Machine Check Exception Presents   :-
+CMPXCHG8B instruction support	   :-
+APIC on Chip			   :-
+ 
+ 
+ 
+2) Intel 486
+   Note: All SL Enhanced 486:  { i486SX,i486DX,i486DX2 marked '&E' on chip
+   surface }, IntelSX2,IntelDX4 support VME !!!!
+   But: Sxs never have FPU on chip.
+ 
+CPUID return CPUID information
+Maximum Available of CPUID info entrys:1
+Vendor string is : "GenuineIntel"
+ 
+Model Info :
+Stepping ID is : 0
+Model	       : 8
+Family	       : 4
+M field	       : 0
+Compability Flags:
+FPU on Chip			   :+
+Virtual Mode Extensions present	   :+
+CPU support I/O breakpoints	   :-
+CPU support 4MB pages		   :-
+Time Stamp Counter Presents	   :-
+CPU have Pentium compatible MSRs   :-
+Machine Check Exception Presents   :-
+CMPXCHG8B instruction support	   :-
+APIC on Chip			   :-
+ 
+ 
+3) Pentium
+   Note: P54C may say that build-in APIC not present if it
+   not supported by external hardware !!!!! (This data from
+   P54C in single processor configuration)
+ 
+CPUID return CPUID information
+Maximum Available of CPUID info entrys:1
+Vendor string is : "GenuineIntel"
+ 
+Model Info :
+Stepping ID is : 1
+Model	       : 2
+Family	       : 5
+M field	       : 0
+Compability Flags:
+FPU on Chip			   :+
+Virtual Mode Extensions present	   :+
+CPU support I/O breakpoints	   :+
+CPU support 4MB pages		   :+
+Time Stamp Counter Presents	   :+
+CPU have Pentium compatible MSRs   :+
+Machine Check Exception Presents   :+
+CMPXCHG8B instruction support	   :+
+APIC on Chip			   :-
+ 
+ 
+-> END of Examples
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM,VM,SMM
+ 
+Physical Form:		 CPUID
+COP (Code of Operation): 0FH A2H
+Clocks:	  486s & Pentium  (EAX=1)	    : 14
+	  486s & Pentium  (EAX=0 or EAX>1)  : 9
+ 
+ 
+ 
+ 
+ 
+---------------------------------------------------
+F4X4 - FPU: Multiplicate vector on Matrix 4x4
+ 
+ 
+ 
+FPU:  IIT FPUs.
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: F4X4
+ 
+Description:
+ 
+	;   This Instruction Multiplicate vector on
+	; Matrix 4X4
+ 
+ _  _	    _		       _	_  _
+|    |	   |			|      |    |
+| Xn |	   | A00  A01  A02  A03 |      | X0 |
+| Yn |	=  | A10  A11  A12  A13 |  X   | Y0 |
+| Zn |	   | A20  A21  A22  A23 |      | Z0 |
+| Wn |	   | A30  A31  A31  A33 |      | W0 |
+|_  _|	   |_		       _|      |_  _|
+ 
+ 
+	 ; Data fetches/stores from/to FPU registers:
+ 
+	# of	  F E T C H E S	      STORE
+       Register	 Bank0 Bank1 Bank2    Bank0
+	ST	  X0	A33   A31      Xn
+	ST(1)	  Y0	A23   A21      Yn
+	ST(2)	  Z0	A13   A11      Zn
+	ST(3)	  W0	A03   A01      Wn
+	ST(4)		A32   A30
+	ST(5)		A22   A20
+	ST(6)		A12   A10
+	ST(7)		A02   A00
+ 
+ 
+ 
+Note: See FSBP0,FSBP1,FSBP2 for more information
+ 
+ 
+FPU Flags Affected:  S
+ 
+FPU mode: Any
+ 
+Physical Form:		 F4X4
+COP (Code of Operation): DBH F1H
+Clocks:	   IIT 2c87    : 242
+	   IIT 3c87    : 242
+	   IIT 3c87SX  : 242
+ 
+ 
+---------------------------------------------------
+FNSTDW - FPU Not wait Store Device Word register
+ 
+ 
+FPU:  i387SL Mobile
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FNSTDW dest
+ 
+Description:
+ 
+	dest <- Device Word
+ 
+Format of Device word:
+	bit(s)	Description
+	0-7	Reserved
+	 8	S - Status bit:
+		    if S=1 then FP device is a static design and OS
+		    or APM Bios may set CLK slow to 0 Mhz without
+		    lost any data.
+	9-15	Reserved
+ 
+ 
+Note: Device word register valid only after FNINIT
+ 
+ 
+FPU Flags Affected: None
+ 
+CPU mode: Any
+ 
+Physical Form:		 FNSTDW	 AX
+COP (Code of Operation): DFH E1H
+Clocks:	      i387SL Mobile: 13
+ 
+ 
+---------------------------------------------------
+FNSTSG - FPU Not wait Store Signature Word register
+ 
+ 
+ 
+FPU:  i387SL Mobile
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FNSTSG dest
+ 
+Description:
+ 
+	dest <- Signature Word
+ 
+Format of Signature word:
+	bit(s)	Description
+	 3-0	Revision
+	 7-4	Steppin
+	11-8	Family
+	15-12	Version
+ 
+Note:
+	For i387(tm) SL Mobile Signature is:
+		Version	 = 2
+		Family	 = 3   ; 387
+		Stepping = 1   ; Ax step
+		Revision = 0   ; x0 step
+				i.e i387(tm) SL is A0 step
+ 
+Note: This FPU is out of life
+ 
+ 
+Note: Signature word register valid only after FNINIT
+ 
+ 
+FPU Flags Affected: None
+ 
+CPU mode: Any
+ 
+Physical Form:		 FNSTSG	 AX
+COP (Code of Operation): DFH E2H
+Clocks:	      i387SL Mobile: 13
+ 
+ 
+---------------------------------------------------
+FRICHOP - FPU: Round to Integer chop method
+ 
+ 
+FPU:  Cyrix FPUs and 486s with FPU on chip
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FRICHOP
+ 
+Description:
+ 
+	ST <- ROUND ( ST,CHOP )
+ 
+Note:
+	This instruction calculate rounding ST toward zero
+	i.e.  ignoring part righter that decimal .
+ 
+Examples:
+ 
+	 1.2   ->   1.0
+	-1.2   ->  -1.0
+	 3.0   ->   3.0
+	 0.0   ->   0.0
+	 1.5   ->   1.0
+	-2.0   ->  -2.0
+ 
+ 
+FPU Flags Affected:  S,P,D,I,C1
+ 
+FPU mode: Any
+ 
+Physical Form:		 FRICHOP
+COP (Code of Operation): DDH FCH
+Clocks:	      Cx83D87  : 15
+	      Cx83S87  : 15
+	      CxEMC87  : 15
+	      Cx487DLC :
+ 
+ 
+---------------------------------------------------
+FRINEAR - FPU: Round to Integer Nearest method
+ 
+ 
+FPU:  Cyrix FPUs and 486s with FPU on chip
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FRINEAR
+ 
+Description:
+ 
+	ST <- ROUND ( ST,NEAREST )
+ 
+Note:
+	This instruction calculate rounding ST toward nearest
+ 
+Examples:
+ 
+	 1.2   ->   1.0
+	-1.2   ->  -1.0
+	 3.0   ->   3.0
+	 0.0   ->   0.0
+	 1.5   ->   1.0
+	 1.8   ->   2.0
+	-2.0   ->  -2.0
+ 
+ 
+FPU Flags Affected:  S,P,D,I,C1
+ 
+FPU mode: Any
+ 
+Physical Form:		 FRINEAR
+COP (Code of Operation): DFH FCH
+Clocks:	      Cx83D87  : 15
+	      Cx83S87  : 15
+	      CxEMC87  : 15
+	      Cx487DLC :
+ 
+ 
+ 
+---------------------------------------------------
+FRINT2 - FPU: Round to Integer
+ 
+ 
+FPU:  Cyrix FPUs and 486s with FPU on chip
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FRINT2
+ 
+Description:
+ 
+	IF ( exact half ) THEN
+		{
+		ST <- SIGN(ST) * ROUND(ABS(ST)+0.5,NEAREST)
+		}
+	    ELSE
+		{
+		ST <- ROUND ( ST,NEAREST )
+		}
+	END
+ 
+Note:
+	This instruction calculate rounding ST toward nearest,
+	but if number is exact half then this instruction round
+	it toward signed infinity. Sign of this infinity is same
+	with sign of number.
+ 
+Examples:
+ 
+	 1.2   ->   1.0
+	-1.2   ->  -1.0
+	 3.0   ->   3.0
+	 0.0   ->   0.0
+	 1.5   ->   2.0
+	 1.8   ->   2.0
+	-2.0   ->  -2.0
+	-1.5   ->  -2.0
+ 
+FPU Flags Affected:  S,P,D,I,C1
+ 
+FPU mode: Any
+ 
+Physical Form:		 FRINT2
+COP (Code of Operation): DBH FCH
+Clocks:	      Cx83D87  : 15
+	      Cx83S87  : 15
+	      CxEMC87  : 15
+	      Cx487DLC :
+ 
+ 
+---------------------------------------------------
+FRSTPM - FPU Reset Protected Mode
+ 
+ 
+ 
+FPU:  i287XL i287XLT
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FRSTPM
+ 
+Description:
+ 
+	Reset Cooprocessor from Protected Mode
+	to Real Address mode.
+ 
+FPU Flags Affected: None
+ 
+CPU mode:Any ???
+ 
+Physical Form:		 FRSTPM
+COP (Code of Operation): DBH E5H
+Clocks:	      i287XL   : 12
+	      i287XLT  : 12
+ 
+ 
+---------------------------------------------------
+FSBP0 - FPU: Set Bank pointer to Bank # 0
+ 
+ 
+FPU:  IIT FPUs.
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FSBP0
+ 
+Description:
+ 
+	;   This Instruction set current bank pointer to
+	; Bank # 0.
+ 
+	;   Each bank contain eight 80bit registers
+	;   There are 3 banks (0,1,2) in Chip
+ 
+	;   After initialization FPU select bank # 0.
+ 
+ 
+FPU Flags Affected:  None
+ 
+FPU mode: Any
+ 
+Physical Form:		 FSBP0
+COP (Code of Operation): DBH E8H
+Clocks:	   IIT 2c87    : 6
+	   IIT 3c87    : 6
+	   IIT 3c87SX  : 6
+ 
+ 
+---------------------------------------------------
+FSBP1 - FPU: Set Bank pointer to Bank # 1
+ 
+ 
+ 
+FPU:  IIT FPUs.
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FSBP1
+ 
+Description:
+ 
+	;   This Instruction set current bank pointer to
+	; Bank # 1.
+ 
+	;   Each bank contain eight 80bit registers
+	;   There are 3 banks (0,1,2) in Chip
+ 
+	;   After initialization FPU select bank # 0.
+ 
+ 
+FPU Flags Affected:  None
+ 
+FPU mode: Any
+ 
+Physical Form:		 FSBP1
+COP (Code of Operation): DBH EBH
+Clocks:	   IIT 2c87    : 6
+	   IIT 3c87    : 6
+	   IIT 3c87SX  : 6
+ 
+ 
+---------------------------------------------------
+FSBP2 - FPU: Set Bank pointer to Bank # 2
+ 
+ 
+ 
+FPU:  IIT FPUs.
+ 
+Type of Instruction: FPU instruction
+ 
+Instruction: FSBP2
+ 
+Description:
+ 
+	;   This Instruction set current bank pointer to
+	; Bank # 2.
+ 
+	;   Each bank contain eight 80bit registers
+	;   There are 3 banks (0,1,2) in Chip
+ 
+	;   After initialization FPU select bank # 0.
+ 
+ 
+FPU Flags Affected:  None
+ 
+FPU mode: Any
+ 
+Physical Form:		 FSBP2
+COP (Code of Operation): DBH EAH
+Clocks:	   IIT 2c87    : 6
+	   IIT 3c87    : 6
+	   IIT 3c87SX  : 6
+ 
+ 
+---------------------------------------------------
+IBTS	-  Insert Bits String
+ 
+ 
+CPU:  80386 step A0-B0 only
+ 
+Type of Instruction: User
+ 
+Instruction:  IBTS base,bitoffset,len,sorc
+ 
+ 
+Description:
+	     Write bit string length  bits from
+	      [bits  .. 0 ]	(lowest bits) to bitfield,
+	     defined by  and bitsoffset  from this base
+	     to start of the field to write. String write from this start
+	     field bit to higher memory addresses or register bits.
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM,VM
+ 
++++++++++++++++++++++++
+Physical Form:	  IBTS	r/m16,AX,CL,r16
+		  IBTS	r/m32,EAX,CL,r32
+COP (Code of Operation)	 : 0FH A7H Postbyte
+ 
+Clocks:		IBTS
+80386:		12/19
+ 
+ 
+---------------------------------------------------
+ICEBP  - PWI Mode BreakPoint, ICE address space
+ 
+ 
+ 
+CPU:  IBM 486SLC2
+ 
+Type of Instruction: System
+ 
+Instruction: ICEBP
+ 
+Description:
+ 
+	IF (condition) THEN  ; see condition below
+	       {
+	       SAVE STATUS OF EXECUTION TO ICE space;
+	       ENTER SMM;
+	       }
+	   ELSE
+	      {
+	      INT 1;
+	      }
+       END
+ 
+Note:	This condition can be set before execution this instruction:
+	CPL=0
+	MSR1000H.EPCEA=1
+	MSR1000H.EPWI=1
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM0
+ 
+Physical Form:		 ICEBP
+COP (Code of Operation): F1H
+Clocks:	 IBM 486SLC2   : 460
+ 
+ 
+---------------------------------------------------
+ICEBP  -  In-Circuit Emulator Breakpoint
+ 
+ 
+ 
+CPU:  some models of i486, i386
+ 
+Type of Instruction: System
+ 
+Instruction: ICEBP
+ 
+Description:
+ 
+	IF (condition) THEN  ; see condition below
+	       {
+	       CHANGED TO THE ICE instruction mode;
+	       }
+	   ELSE
+	      {
+	      INT 1;
+	      }
+       END
+ 
+Note:	Condition  is  DR7.bit12=1
+ 
+Note: This instruction very usefull to debbuging as Single-Byte Interrupt
+      but it generate never int 3, but int 1.
+ 
+Note: Frank van Gilluwe in his book "The PC Undocument", 1994 year say
+      that this instruction is VERY UNDOCUMENT.
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM0
+ 
+Physical Form:		 ICEBP
+COP (Code of Operation): F1H
+Clocks:		       : N/A
+ 
+ 
+ 
+---------------------------------------------------
+ICERET	- Return from PWI mode, ICE space
+ 
+ 
+CPU: IBM 486SLC2
+ 
+Type of Instruction: System Operation
+		    (Work only then CPL=0)
+ 
+Instruction: ICERET
+ 
+Description:
+	      Load All Registers (Include Shadow Registers) from Table
+	      Which Begin on  place pointed ES:EDI, and return from PWI
+	      mode.
+ 
+Format of ICERET Table:
+ 
+	       Offset  Len  Description
+		0H	4	CR0
+		4H	4	EFLAGS
+		8H	4	EIP
+		CH	4	EDI
+		10H	4	ESI
+		14H	4	EBP
+		18H	4	ESP
+		1CH	4	EBX
+		20H	4	EDX
+		24H	4	ESX
+		28H	4	EAX
+		2CH	4	DR6
+		30H	4	DR7
+		34H	4	TR	 (16 bit, zero filled up)
+		38H	4	LDT  ---------
+		3CH	4	GS   ---------
+		40H	4	FS   ---------
+		44H	4	DS   ---------
+		48H	4	SS   ---------
+		4CH	4	CS   ---------
+		50H	4	ES   ---------
+		54H	4	TSS.attrib
+		58H	4	TSS.base
+		5CH	4	TSS.limit
+		60H	4	Reserved
+		64H	4	IDT.base
+		68H	4	IDT.limit
+		6CH	4	REP OUTS overrun flag
+		70H	4	GDT.base
+		74H	4	GDT.limit
+		78H	4	LDT.attrib
+		7CH	4	LDT.base
+		80H	4	LDT.limit
+		84H	4	GS.attrib
+		88H	4	GS.base
+		8CH	4	GS.limit
+		90H	4	FS.attrib
+		94H	4	FS.base
+		98H	4	FS.limit
+		9CH	4	DS.attrib
+		A0H	4	DS.base
+		A4H	4	DS.limit
+		A8H	4	SS.attrib
+		ACH	4	SS.base
+		B0H	4	SS.limit
+		B4H	4	CS.attrib
+		B8H	4	CS.base
+		BCH	4	CS.limit
+		C0H	4	ES.attrib
+		C4H	4	ES.base
+		C8H	4	ES.limit
+				Unknown Unusable area
+				;; Temporary registers:
+		100H	4	TST
+		104H	4	IDX
+		108H	4	TMPH
+		10CH	4	TMPG
+		110H	4	TMPF
+		114H	4	TMPE
+		118H	4	TMPD
+		11CH	4	TMPC
+		120H	4	TMPB
+		124H	4	TMPA
+ 
+		128H	4	CR2
+		12CH	4	CR3
+		130H	4	MSR1001H (31-0)
+		134H	4	MSR1001H (63-32)
+		138H	4	MSR1000H (15-0)
+		13CH	4	DR0
+		140H	4	DR1
+		144H	4	DR2
+		148H	4	DR3
+		14CH	4	PEIP
+		Length of table is 150H bytes.
+ 
+Note: For descriptor format refer to LOADALL and RES3 instructions.
+ 
+ 
+Flags Affected: All (FLAGS Register Reload)
+ 
+CPU mode: SMM
+ 
+Physical Form:		 ICERET
+COP (Code of Operation): 0FH 07H  Note: Code is same with Intel's LOADALL
+Clocks:	 IBM 486SLC2   : 440
+ 
+ 
+ 
+---------------------------------------------------
+INVD  - Invalidate Cache Buffer
+ 
+ 
+ 
+CPU:  I486 +
+ 
+Type of Instruction: System
+ 
+Instruction: INVD
+ 
+Description:
+ 
+	     FLUSH INTERNAL CACHE
+   ( It means that all lines of internal caches sets as
+    invalid )
+	 SIGNAL EXTERNAL CACHE TO FLUSH
+ 
+ 
+Notes: This instruction not work in Real Mode and  in
+Protected mode work only in ring 0 ;
+ 
+Flags Affected: None
+ 
+CPU mode: PM0,SMM?
+ 
+Physical Form:		 INVD
+COP (Code of Operation): 0FH 08H
+Clocks: Cyrix Cx486SLC : 4
+	      i486     : 4
+	      Pentium  : 15
+ 
+ 
+---------------------------------------------------
+INVLPG	- Invalidate Page Entry In TLB
+ 
+ 
+ 
+CPU:  I486 +
+ 
+Type of Instruction: System
+ 
+Instruction: INVLPG mem
+ 
+Description:
+ 
+	IF found in data or code (if both) (or common if single)
+	   TLB entry with linear address (page part) same as
+	   memory operand  then mark this entry as Invalid;
+ 
+Notes: This instruction not work in Real Mode and  in
+Protected mode work only in ring 0 ;
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM,VM,SMM
+ 
+Physical Form:		 INVLPG mem
+COP (Code of Operation): 0FH 01H mm111mmm
+Clocks: Cyrix Cx486SLC : 4
+	      i486     : 12 if hit
+		       : 11 if not hit
+	      Pentium  : 25
+ 
+---------------------------------------------------
+LOADALL	 - Load All Registers
+ 
+ 
+CPU:  Intel 386+ +all clones
+ 
+ 
+Type of Instruction: System
+		    (Work only then CPL=0)
+ 
+Instruction: LOADALL
+ 
+Description:
+	      Load All Registers (Include Shadow Registers) from Table
+	      Which Begin on  place pointed ES:EDI
+ 
+Format of LOADALL Table:
+ 
+	       Offset  Len  Description
+		0H	4	CR0
+		4H	4	EFLAGS
+		8H	4	EIP
+		CH	4	EDI
+		10H	4	ESI
+		14H	4	EBP
+		18H	4	ESP
+		1CH	4	EBX
+		20H	4	EDX
+		24H	4	ESX
+		28H	4	EAX
+		2CH	4	DR6
+		30H	4	DR7
+		34H	4	TR	 (16 bit, zero filled up)
+		38H	4	LDT  ---------
+		3CH	4	GS   ---------
+		40H	4	FS   ---------
+		44H	4	DS   ---------
+		48H	4	SS   ---------
+		4CH	4	CS   ---------
+		50H	4	ES   ---------
+		54H	4	TSS.attrib
+		58H	4	TSS.base
+		5CH	4	TSS.limit
+		60H	4	0s
+		64H	4	IDT.base
+		68H	4	IDT.limit
+		6CH	4	0s
+		70H	4	GDT.base
+		74H	4	GDT.limit
+		78H	4	LDT.attrib
+		7CH	4	LDT.base
+		80H	4	LDT.limit
+		84H	4	GS.attrib
+		88H	4	GS.base
+		8CH	4	GS.limit
+		90H	4	FS.attrib
+		94H	4	FS.base
+		98H	4	FS.limit
+		9CH	4	DS.attrib
+		A0H	4	DS.base
+		A4H	4	DS.limit
+		A8H	4	SS.attrib
+		ACH	4	SS.base
+		B0H	4	SS.limit
+		B4H	4	CS.attrib
+		B8H	4	CS.base
+		BCH	4	CS.limit
+		C0H	4	ES.attrib
+		C4H	4	ES.base
+		C8H	4	ES.limit
+		CCH	4	Length of table
+		D0H	30h	Unused,not loaded
+		100H	4	Temporary Register IST
+		104H	4	Temporary Register I
+		108H	4	Temporary Register H
+		10CH	4	Temporary Register G
+		110H	4	Temporary Register F
+		114H	4	Temporary Register E
+		118H	4	Temporary Register D
+		11CH	4	Temporary Register C
+		120H	4	Temporary Register B
+		124H	4	Temporary Register A
+ 
+ 
+ 
+Format	of Attrib field:
+ 
+	       Byte	Description
+	       0	0s
+	       1	AR (Access Right) byte in the Descriptor format
+			Note:
+			   P bit is a valid bit
+			   if valid bit=0 then Shadow Register is invalid and
+			      INT 0DH - General Protection Fault call
+			   DPL of SS,CS det. CPL
+	       2-3	0s
+ 
+ 
+Flags Affected: All (FLAGS Register Reload)
+ 
+CPU mode: RM,PM0
+ 
+Physical Form:		 LOADALL
+COP (Code of Operation): 0FH 07H
+Clocks:	      i386XX   : n/a
+	      i486XX   : n/a
+ 
+Note: This operation used 102 data transfer cycles on 32bit bus
+      Typical clocks:
+	      i386SX: ~350
+	      i386DX: ~290
+	      i486XX: ~220
+ 
+ 
+ 
+---------------------------------------------------
+LOADALL	 - Load All Registers From Table
+ 
+ 
+CPU:  Intel 80286 and all its clones
+ 
+ 
+Type of Instruction: System
+		    (Work only then CPL=0)
+ 
+Instruction: LOADALL
+ 
+Description:
+	      Load All Registers (Include Shadow Registers) from Table
+	      Which Begin on  000800H  Address, Len of this table is
+	      66H
+ 
+Format of LOADALL Table:
+ 
+	       Address	Len  Description
+		800H	6	None
+		806H	2	MSW
+		808H	14	None
+		816H	2	TR
+		818H	2	FLAGS
+		81AH	2	IP
+		81CH	2	LDTR
+		81EH	2	DS
+		820H	2	SS
+		822H	2	CS
+		824H	2	ES
+		826H	2	DI
+		828H	2	SI
+		82AH	2	BP
+		82CH	2	SP
+		82EH	2	BX
+		830H	2	DX
+		832H	2	CX
+		834H	2	AX
+		836H	6	ES Shadow Descriptor
+		83CH	6	CS Shadow Descriptor
+		842H	6	SS Shadow Descriptor
+		848H	6	DS Shadow Descriptor
+		84EH	6	GDTR
+		854H	6	LDT Shadow Descriptor
+		85AH	6	IDTR
+		860H	6	TSS Shadow Descriptor
+ 
+Format	of Shadow Descriptor:
+ 
+	       Byte	Description
+	       0-2	24bit Phisical Address
+		3	AR (Access Right) byte
+	       4-5	16bit Segment Limit
+ 
+ 
+Format	of GDTR and IDTR:
+ 
+	       Byte	Description
+	       0-2	24bit Phisical Address
+		3	0s
+	       4-5	16bit Segment Limit
+ 
+ 
+Note: Using this instruction we may turn on "Big Real Mode" i.e. mode then
+PG=1,PE=0,cpl=0. This mode very usefull,But Pentium never  support this
+instruction.
+ 
+ 
+Flags Affected: All (FLAGS Register Reload)
+ 
+CPU mode: RM,PM0
+ 
+Physical Form:		 LOADALL
+COP (Code of Operation): 0FH 05H
+Clocks:	      80286    : 195
+ 
+ 
+---------------------------------------------------
+RDMSR  - Read From Model Specified Register
+ 
+ 
+CPU:  Pentium (tm), IBM 386SLC,486SLC,486SLC2
+ 
+Type of Instruction: System
+ 
+Instruction: RDMSR
+ 
+Description:
+ 
+	IF (ECX is valid number of MSR) and (CPL=0)  THEN
+		  {
+		  EDX:EAX <- MSR [ECX];
+		  }
+	    ELSE
+		  {
+		  General Protection Fault  INT 0DH (0)
+		  }
+	END
+ 
+ 
+Valid number Of MSR is:
+	Pentium:  0-2,4-0Eh,10h-13h
+    IBM 486SLC2:  1000H-1002H
+    IBM 386SLC:	  1000H-1001H
+    IBM 486SLC:	  1000H-1001H
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM0,SMM
+ 
+Physical Form:		 RDMSR
+COP (Code of Operation): 0FH 32H
+Clocks:	     Pentium   : 20-24
+ 
+Note: The MSR # 3,0fh and >13h are reserved. Do not execute RDMSR/WRMSR with
+      this values.
+ 
+      Register	Description
+ 
+      MSR 0  is Machine check Exception Address register (Read only)
+		bits	Description
+		63..32	Reserved
+		31..0	Machine Check Phisical Address
+ 
+      MSR 1  is Machine Check Type register (Read Only)
+		bits	Description
+		63..5	Reserved
+		4	LOCK
+			=1 if bus cycle called Machine Check was Locked
+			=0 if --//-- not locked (normal)
+		3	M/IO# \
+		2	D/C#	 State of output pins in bus cycle called
+		1	W/R#  /	 Machine check
+		0	CHK  (Check)
+			=1 after last read MSR 1 was Machine Check
+			Note: This bit Clearing on reading
+ 
+      MSR 2,4,5,6,7,8,9,Ah,Bh,Ch,Dh,Eh used to perform Cache,TLB,BTB testing.
+	     This registers named Test Registers 0,2-C.
+ 
+      MSR Eh  is Test Register 12 (TR 12) (Read/Write)
+		bits	Description
+		63..4	Reserved
+		3	CI
+		2	SE
+		1	TR (Tracing Control)
+			After reset clear to zero.
+			This bit enable/disable special branch trace
+			message cycle which generating when BTB hit.
+			=0 disable
+			=1 enable
+		0	NBP
+ 
+      MSR 10h is Time Stamp Counter  (TSC) (Read/Write)
+		Time Stamp Counter (as all other MSRs) is clearing to 0 when
+		RESET pin shutdown and unchanged when INIT pin shutdown.
+		TSC is incremented every CPU core clock cycle.
+ 
+      MSR 11h is Control/Event Select Register (CESR) (Read/Write)
+		Init value after reset = 00000000000000000h
+		bits	Description
+		63..25	Reserved
+		24	Counting Method (Counter #1)
+			=1 count CPU cycles
+			=0 count events
+		23	Allow count in CPL=3 (Counter #1)
+			=1 Yes
+			=0 No
+		22	Allow count in CPL<3 (Counter #1)
+			=1 Yes
+			=0 No
+		21..16	Event Type for Counter #1 (see below)
+		15..9	Reserved
+		8	Counting Method (Counter #0)
+			=1 count CPU cycles
+			=0 count events
+		7	Allow count in CPL=3 (Counter #0)
+			=1 Yes
+			=0 No
+		6	Allow count in CPL<3 (Counter #0)
+			=1 Yes
+			=0 No
+		5..0	Event Type for counter #0
+			Value	Event Type
+			00h	Data Read
+			01h	Data Write
+			02h	Data TLB miss
+			03h	Data Read Miss
+			04h	Data Write miss
+			05h	Write hit to Modified or Exclusive Cacheline
+			06h	Data cache lines written back
+			07h	Data cache snoops
+			08h	Data cache snoops hit
+			09h	Memory access in both pipes
+			0Ah	Data bank access conflict
+			0Bh	Misaligned data memory references
+			0Ch	Code read
+			0Dh	Code TLB miss
+			0Eh	Code cache miss
+			0Fh	Any segment register load
+			10h	Segment descriptor cache accessed
+			11h	Segment descriptor cache hit
+			12h	Branches
+			13h	BTB hit
+			14h	Taken branch or BTB hit
+			15h	Pipeline flushes
+			16h	Instructions executed
+			17h	Instruction executed in V pipes
+			18h	Bus utilization
+			19h	Pipeline stalled by write backups
+			1Ah	Pipeline stalled by data memory read
+			1Bh	Pipeline stalled by write to M or E line
+			1Ch	Locked bus cycle
+			1Dh	I/O cycle
+			1Eh	Noncachable memory references
+			1Fh	Pipeline stalled by AGI
+			20h-21h	Reserved
+			22h	FP operations
+			23h	Breakpoint 0 match
+			24h	Breakpoint 1 match
+			25h	Breakpoint 2 match
+			26h	Breakpoint 3 match
+			27h	Hardware interrupt
+			28h	Data read or data write
+			29h	Data read/write miss
+			2Ah-3Fh Reserved
+ 
+ 
+      MSR 12h is Counter #0 (Read/Write)
+		bits	Description
+		63..??	Reserved
+		??..0	Current counter value
+ 
+      MSR 13h is Counter #1 (Read/Write)
+		bits	Description
+		63..??	Reserved
+		??..0	Current counter value
+ 
+      MSR 1000H is Processor Operation Register (IBM only)
+		(486SLC/486SLC2/386SLC)
+		bits	Description
+		63..19	Reserved
+		18	LWPLA (Low Power PLA) (reserved on IBM 386SLC)
+		17	BUSRD (Bus Read)      (reserved on IBM 386SLC)
+		16	CPGE  (Cache Parity Generate Error)
+			(reserved on IBM 386SLC)
+		15	ECNPX (Enable cachebility of NPX operands)
+		14	EPWIA (Enable PWI ADS)
+		13	ELPWH (Enable Low Power Halt Mode)
+		12	XTOUT (Extend Out Instruction)
+		11	CRLD  (Cache reload bit)
+		10	EIKEN (Enable internal KEN#)
+		9	DSCL  (Disable cache Lock Mode)
+		8	Reserved
+		7	CE     (Cache enable)
+		6	EDBS   (Enable DBCS)
+		5	EPWI   (Enable Power Interrupt)
+		4	EFSP   (Enable Flush Snooping)
+		3	ENSP   (Enable Snoop Input)
+		2	A20M   (Address line 20 Mask)
+		1	CPCE   (Cache Parity Checking Enable)
+		0	CPE    (Cache Parity Error)
+ 
+      MSR 1001H is Cache Region Control Register  (IBM only)
+		( IBM 386SLC/486SLC/486SLC2)
+		bits	description
+		63..40	Reserved
+		39..32	Cache Memory Limit (CMLR)
+		31..16	1st MB Read Only (LMROR)
+		15..0	1st MB Cachable (LMCR)
+ 
+      MSR 1002H is processor operation register (IBM only)
+		(IBM 486SLC2 only)
+		bits	description
+		63..30	Reserved
+		29	EEDFS (Enable External Dynamic Frequency Shift)
+		28	DFSRY (Dynamic Frequency Shift Ready)
+		27	DFSMD (Dynamic Frequency Shift Mode)
+		26..24	CLKMD (Clock Mode)
+			=000	x2
+			=011	x1
+		23..0	Reserved
+ 
+ 
+Note: MSRs usefull documented in "Supplement to Pentium Processors User's
+Manual" (Intel Corp. 1993,1994).
+      IBM MSRs documented in "486SLC2 (tm) Microprocessor Data Sheet"
+(IBM Corp. 1993,Order number: VT05452)
+ 
+ 
+---------------------------------------------------
+RDTSC  - Read From Time Stamp Counter
+ 
+ 
+CPU:  Pentium (tm)
+ 
+Type of Instruction: System/User
+ 
+Instruction: RDTSC
+ 
+Description:
+ 
+	IF (CR4.TSD=0) or ((CR4.TSD=1) and (CPL=0))  THEN
+		  {
+		  EDX:EAX <- TSC;
+		  }
+	    ELSE
+		  {
+		  General Protection Fault  INT 0DH (0)
+		  }
+	END
+ 
+ 
+ 
+Note: TSC is one of MSR and after global hardware reset (not SRESET , but
+RESET ) it clear to 0000000000000000H.
+      TSC is MSR index 10h. TSC may set using WRMSR instruction.
+      TSC incremented every CPU core clock cycle.
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM0,SMM
+	  ; PM,VM if enable
+ 
+Physical Form:		 RDTSC
+COP (Code of Operation): 0FH 31H
+Clocks:	     Pentium   : n/a [20-24]
+ 
+ 
+---------------------------------------------------
+REPC  - Repeat While Carry Flag
+ 
+ 
+CPU:  NEC V20, NEC V30, etc [ Vxx seria ]
+      Sony V20, Sony V30
+ 
+Type of Instruction: Prefix
+ 
+Instruction: REPC
+ 
+Description:
+ 
+	DO
+	     CX=CX-1;
+	     SERVICE_PENDING_INTERRUPT;
+	     STRING_INSTRUCTION;
+       LOOPWHILE ((CX<>0) AND (CF==1));
+ 
+ 
+Flags Affected: None
+ 
+CPU Mode: RM 8086
+ 
+Physical Form:		 REPC
+COP (Code of Operation): 65H
+Clocks:	      NEC V20  : 2
+	      NEC V30  : 2
+ 
+ 
+---------------------------------------------------
+REPNC  - Repeat While Not Carry Flag
+ 
+ 
+ 
+CPU:  NEC V20, NEC V30, etc [ Vxx seria ]
+      Sony V20, Sony V30
+ 
+Type of Instruction: Prefix
+ 
+Instruction: REPNC
+ 
+Description:
+ 
+	DO
+	     CX=CX-1;
+	     SERVICE_PENDING_INTERRUPT;
+	     STRING_INSTRUCTION;
+       LOOPWHILE ((CX<>0) AND (CF<>1));
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM 8086
+ 
+Physical Form:		 REPNC
+COP (Code of Operation): 64H
+Clocks:	      NEC V20  : 2
+	      NEC V30  : 2
+ 
+ 
+---------------------------------------------------
+RES3  - Restore All  CPU Registers
+ 
+ 
+CPU:  AMD Am386SXLV, Am386DXLV
+ 
+ 
+Type of Instruction: System Operation
+		    (Work only then CPL=0)
+ 
+Instruction: RES3
+ 
+Description:
+	      Load All Registers (Include Shadow Registers) from Table
+	      Which Begin on  place pointed ES:EDI
+ 
+Note:
+	      This instruction is AMD analog Intel's LOADALL instruction
+	      but it's more i.c. return from SMM used this instruction.
+ 
+	      Then in SMM table is in SMRAM, then non SMM then table is
+	      in main memory.
+ 
+Format of RES3 Table:
+ 
+	       Offset  Len  Description
+		0H	4	CR0
+		4H	4	EFLAGS
+		8H	4	EIP
+		CH	4	EDI
+		10H	4	ESI
+		14H	4	EBP
+		18H	4	ESP
+		1CH	4	EBX
+		20H	4	EDX
+		24H	4	ESX
+		28H	4	EAX
+		2CH	4	DR6
+		30H	4	DR7
+		34H	4	TR	 (16 bit, zero filled up)
+		38H	4	LDT  ---------
+		3CH	4	GS   ---------
+		40H	4	FS   ---------
+		44H	4	DS   ---------
+		48H	4	SS   ---------
+		4CH	4	CS   ---------
+		50H	4	ES   ---------
+		54H	4	TSS.attrib
+		58H	4	TSS.base
+		5CH	4	TSS.limit
+		60H	4	Reserved
+		64H	4	IDT.base
+		68H	4	IDT.limit
+		6CH	4	REP OUTS overrun flag
+		70H	4	GDT.base
+		74H	4	GDT.limit
+		78H	4	LDT.attrib
+		7CH	4	LDT.base
+		80H	4	LDT.limit
+		84H	4	GS.attrib
+		88H	4	GS.base
+		8CH	4	GS.limit
+		90H	4	FS.attrib
+		94H	4	FS.base
+		98H	4	FS.limit
+		9CH	4	DS.attrib
+		A0H	4	DS.base
+		A4H	4	DS.limit
+		A8H	4	SS.attrib
+		ACH	4	SS.base
+		B0H	4	SS.limit
+		B4H	4	CS.attrib
+		B8H	4	CS.base
+		BCH	4	CS.limit
+		C0H	4	ES.attrib
+		C4H	4	ES.base
+		C8H	4	ES.limit
+				Unknown Unusable area
+		100H	4	Temporary register
+		104H	4	-------------
+		108H	4	-------------
+		10CH	4	-------------
+		110H	4	-------------
+		114H	4	-------------
+		118H	4	-------------
+		11CH	4	-------------
+		120H	4	-------------
+		124H	4	Last EIP (Last instruction EIP for Restart)
+ 
+Format	of Attrib field:
+ 
+	       Byte	Description
+	       0	0s
+	       1	AR (Access Right) byte in the Descriptor format
+			Note:
+			   P bit is a valid bit
+			   if valid bit=0 then Shadow Register is invalid and
+			      INT 0DH - General Protection Fault call
+			   DPL of SS,CS det. CPL
+	       2-3	0s
+ 
+ 
+Flags Affected: All (FLAGS Register Reload)
+ 
+CPU mode: RM,PM0,SMM
+ 
+Physical Form:		 RES3
+COP (Code of Operation): 0FH 07H  Note: Code is same with Intel's LOADALL
+Clocks:	   Am386SXLV   : 366
+	   Am386DXLV   : 291
+ 
+---------------------------------------------------
+RES4  - Restore All  CPU Registers
+ 
+ 
+CPU:  AMD Am486SXLV, Am486DXLV
+ 
+ 
+Type of Instruction: System Operation
+		    (Work only then CPL=0)
+ 
+Instruction: RES3
+ 
+Description:
+	      Load All Registers (Include Shadow Registers) from Table
+	      Which Begin on  place pointed ES:EDI
+ 
+Note:
+	      This instruction is AMD analog Intel's LOADALL instruction
+	      but it's more i.c. return from SMM used this instruction.
+ 
+	      Then in SMM table is in SMRAM, then non SMM then table is
+	      in main memory.
+ 
+Format of RES3 Table:
+ 
+	       Offset  Len  Description
+		0H	4	CR0
+		4H	4	EFLAGS
+		8H	4	EIP
+		CH	4	EDI
+		10H	4	ESI
+		14H	4	EBP
+		18H	4	ESP
+		1CH	4	EBX
+		20H	4	EDX
+		24H	4	ESX
+		28H	4	EAX
+		2CH	4	DR6
+		30H	4	DR7
+		34H	4	TR	 (16 bit, zero filled up)
+		38H	4	LDT  ---------
+		3CH	4	GS   ---------
+		40H	4	FS   ---------
+		44H	4	DS   ---------
+		48H	4	SS   ---------
+		4CH	4	CS   ---------
+		50H	4	ES   ---------
+		54H	4	TSS.attrib
+		58H	4	TSS.base
+		5CH	4	TSS.limit
+		60H	4	Reserved
+		64H	4	IDT.base
+		68H	4	IDT.limit
+		6CH	4	REP OUTS overrun flag
+		70H	4	GDT.base
+		74H	4	GDT.limit
+		78H	4	LDT.attrib
+		7CH	4	LDT.base
+		80H	4	LDT.limit
+		84H	4	GS.attrib
+		88H	4	GS.base
+		8CH	4	GS.limit
+		90H	4	FS.attrib
+		94H	4	FS.base
+		98H	4	FS.limit
+		9CH	4	DS.attrib
+		A0H	4	DS.base
+		A4H	4	DS.limit
+		A8H	4	SS.attrib
+		ACH	4	SS.base
+		B0H	4	SS.limit
+		B4H	4	CS.attrib
+		B8H	4	CS.base
+		BCH	4	CS.limit
+		C0H	4	ES.attrib
+		C4H	4	ES.base
+		C8H	4	ES.limit
+				Unknown Unusable area
+		100H	4	Temporary register
+		104H	4	-------------
+		108H	4	-------------
+		10CH	4	-------------
+		110H	4	-------------
+		114H	4	-------------
+		118H	4	-------------
+		11CH	4	-------------
+		120H	4	-------------
+		124H	4	Last EIP (Last instruction EIP for Restart)
+		128H	4	PEIP - Previous SRAM space instruction pointer
+		12EH	36	Unused
+		150H	22	Floating Pointer Internal Registers (Am486DXLV)
+ 
+ 
+Format	of Attrib field:
+ 
+	       Byte	Description
+	       0	0s
+	       1	AR (Access Right) byte in the Descriptor format
+			Note:
+			   P bit is a valid bit
+			   if valid bit=0 then Shadow Register is invalid and
+			      INT 0DH - General Protection Fault call
+			   DPL of SS,CS det. CPL
+	       2-3	0s
+ 
+ 
+Flags Affected: All (FLAGS Register Reload)
+ 
+CPU mode: RM,PM0,SMM
+ 
+Physical Form:		 RES4
+COP (Code of Operation): 0FH 07H  Note: Code is same with Intel's LOADALL
+Clocks:	   Am486SXLV   : N/A
+ 
+---------------------------------------------------
+RSDC  - Restore Register and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  RSDC sreg,sorc
+ 
+ 
+Description:
+ 
+	sreg [selector,shadow_descriptor] <- sorc
+ 
+	; sorc is register and descriptor structure (see below)
+ 
+	; Note: This instruction load segment register
+	;	include shadow descriptor
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: RSDC sgeg,mem80
+COP (Code of Operation)	 : 0FH 79H  [mm sreg3 mmm]
+Clocks	IBM BL486DX: 10
+ 
+Note: sreg3 is: 000 ES
+		001 CS
+		010 SS
+		011 DS
+		100 FS
+		101 GS
+ 
+ 
+ 
+---------------------------------------------------
+RSLDT  - Restore LDTR and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  RSLDT sorc
+ 
+ 
+Description:
+ 
+	LDTR [selector,shadow_descriptor] <- sorc
+ 
+	; sorc is register and descriptor structure (see below)
+ 
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: RSLDT  mem80
+COP (Code of Operation)	 : 0FH 7BH  [mm 000 mmm]
+Clocks	IBM BL486DX: 10
+ 
+ 
+ 
+ 
+ 
+---------------------------------------------------
+RSM  - Resume from System Managment Mode
+ 
+ 
+CPU:  I486 SL Enhanced+,i486SL,i386CX,i386EX
+ 
+Type of Instruction: System
+ 
+Instruction: RSM
+ 
+Description:
+ 
+	   Restore execution state from SMRAM and
+	   return to previous CPU mode
+ 
+ 
+CPU mode: SMM only
+	 ( INT 6 - Undefined Opcode in all other mode )
+ 
+Flags Affected: All
+ 
+Note: CPU state restored from dump created entrance to SMM.
+      The CPU leave SMM and return to previous mode.
+      If CPU detect any invalid state it enters shutdown.
+      This invalid states is:
+       * The value stored in State Dump Base field is not 32K aligned
+	 address
+       * Any Reserved bit of CR4 is set to 1 (Pentium only)
+       * Any  illegal Combination of CR0:
+	   ** (PG=1 and PE=0)
+	   ** (NW=1 and CD=0)
+ 
+ 
+Format of Execution State in SMRAM:
+	Offset	Register
+	7FFCh	CR0
+	7FF8h	CR3
+	7FF4h	EFLAGS
+	7FF0h	EIP
+	7FECh	EDI
+	7FE8h	ESI
+	7FE4h	EBP
+	7FE0h	ESP
+	7FDCh	EBX
+	7FD8h	EDX
+	7FD4h	ECX
+	7FD0h	EAX
+	7FCCh	DR7
+	7FC4h	TR, upper 2 bytes reserved
+	7FC0h	LDTR, upper 2 bytes reserved
+	7FBCh	GS, upper 2 bytes reserved
+	7FB8h	FS, upper 2 bytes reserved
+	7FB4h	DS, upper 2 bytes reserved
+	7FB0h	SS, upper 2 bytes reserved
+	7FACh	CS, upper 2 bytes reserved
+	7FA8h	ES, upper 2 bytes reserved
+	7F98h	Reserved
+	7F94h	IDT base  (4 bytes)
+	7F8Ch	Reserved
+	7F88h	GDT base  (4 bytes)
+	7F04h	Reserved
+	7F02h	Auto HALT Restart Slot (2 bytes)
+		Bits 15..2 are reserved
+		Bit 1  Bit 0	Description
+		0	0	Resume to next instruction in interrupted
+				program
+		0	1	Unpredictable
+		1	0	Return to next instruction after HALT
+		1	1	Return to HALT state
+	7F00h	I/O Restart Slot (2 bytes)
+		When RSM execution if I/O restart slot = 0FFh then
+		EIP modified to instruction immediate preceding the
+		SMI# request i.e. CPU automatically reexecute I/O
+		instruction which be trapped by SMI.
+	7EFCh	SMM Revision Identificator (4 bytes)
+		Bits	Description
+		31..18	Reserved
+		17	If=1 Processor support SMBASE relocation
+			else not support
+		16	If =1 Processor support I/O Instruction Restart
+		15..0	SMM Revision Identificator
+			P5,486s = 0000h
+			P54C when I/O Restarts enable = 0002h
+	7EF8h	SMBASE Slot (4 bytes)
+		SMBASE is 32KB aligned 32bit dword which contained a base
+		address for SMRAM.
+		Default value is 30000h
+		Starting Address for for jump in SMM is:
+		  SMBASE+8000h
+		Starting address for State Save area is
+		  SMBASE+[8000h+7FFFh]
+	7E00h	Reserved
+ 
+ 
+Note: In fields marked Reserved saved and restores next registers:
+      CR1,CR2,CR3, hidden descriptors for CS,DS,ES,FS,SS,GS.
+      Never saved registers: DR5-DR0,TR7-TR3,all FPU registers.
+      More Information Not available Yet.
+ 
+ 
+Physical Form:		  RSM
+COP (Code of Operation)	  : 0FH AAH
+Clocks:	  i386CX	  : 338
+	i486 SL Enhanced  : ???
+	 IntelDX4	  : 452	    ; SMBASE relocation
+			  : 456	    ; AutoHALT restart
+			  : 465	    ; I/O Trap restart
+		 Pentium  : 83
+ 
+---------------------------------------------------
+RSM  - Resume from SMM
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  RSM
+ 
+ 
+Description:
+ 
+	RESTORE CPU STATE FROM SMM HEADER AT THE TOP OF
+	SMM SPACE (defined by SMAR register);
+	EXIT SMM;
+ 
+Format of SMM Header:
+	Offset	Length	Description
+	-00h	-	Nothing (Top of SMM space) (Not accessable)
+	-04h	32	DR7
+	-08h	32	EFLAGS
+	-0Ch	32	CR0
+	-10h	32	Current EIP
+	-14h	32	Next instruction EIP
+	-16h	16	Reserved
+	-18h	16	CS selector
+	-1Ch	32	CS descriptor(63-32)
+	-20h	32	CS descriptor(31-0)
+	-24h	32	SMM Flags
+			[ Not available in Cx486S/S2/D/D2]
+			Bit   Description
+			1    I (IN/INSx/OUT/OUTx Indicator)
+			     If =0 current instruction performed
+				   I/O read
+				=1 I/O write
+			2    P (REP INSx/OUTx Prefix)
+			     If =1 current instruction has REP pfix.
+				=0 not has REP pfix
+			3    S (Software SMI)
+			     If =1 current SMM is result of execution
+				   SMINT instruction
+				=0 current SMM is result of hardware SMI
+	-26h	16	I/O Write Data size
+			[ Not available in Cx486S/S2/D/D2]
+			1h = byte
+			3h = word
+			fh = dword
+	-28h	16	I/O Write Address
+			[ Not avaliable in Cx486S/S2/D/D2]
+	-2Ch	32	I/O Write Data
+			[ Not avaliable in Cx486S/S2/D/D2]
+	-30h	32	ESI or EDI
+			This field saved value of source/destination
+			for restart INSx/OUTSx instruction
+			[ Not avaliable in Cx486S/S2/D/D2]
+ 
+ 
+ 
+Flags Affected: All
+ 
+CPU mode: SMM
+ 
+++++++++++++++++
+ 
+Physical Form: RSM
+COP (Code of Operation)	 : 0FH AAH
+Clocks	IBM BL486DX: 76
+ 
+ 
+ 
+ 
+ 
+---------------------------------------------------
+RSTS  - Restore TR and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+ 
+Type of Instruction: System
+ 
+Instruction:  RSTS sorc
+ 
+ 
+Description:
+ 
+	TR [selector,shadow_descriptor] <- sorc
+ 
+	; sorc is register and descriptor structure (see below)
+ 
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: RSTS  mem80
+COP (Code of Operation)	 : 0FH 7DH  [mm 000 mmm]
+Clocks	IBM BL486DX: 10
+ 
+ 
+ 
+ 
+ 
+---------------------------------------------------
+SETALC	- Set AL to Carry Flag
+ 
+ 
+CPU:  Intel 80286 and all its clones and upward
+    compatibility chips
+ 
+Type of Instruction: User
+ 
+Instruction: SETALC
+ 
+Description:
+ 
+	IF (CF=0) THEN AL:=0 ELSE AL:=FFH;
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM,VM,SMM
+ 
+Physical Form:		 SETALC
+COP (Code of Operation): D6H
+Clocks:	      80286    : n/a   [3]
+	      80386    : n/a   [3]
+	     Cx486SLC  : n/a   [2]
+	      i486     : n/a   [3]
+	      Pentium  : n/a   [3]
+Note: n/a is Time that Intel etc not say.
+      [3] is real time it executed.
+ 
+ 
+ 
+---------------------------------------------------
+SMI  - System Managment Interrupt
+ 
+CPU:  AMD Am386SXLV,Am386DXLV
+      AMD 486s
+ 
+Type of Instruction: System
+ 
+Instruction: SMI
+ 
+Description:
+ 
+	IF (SMIE=1) THEN
+	       {
+	       SAVE STATUS OF EXECUTION TO SMRAM;
+	       ENTER SMM;
+	       SMMS <- 1;
+	       }
+	   ELSE
+	      {
+	      INT 1;
+	      }
+       END
+ 
+Notes: SMIE is  (DR7.bit12)
+	       =1 Enable soft SMI
+	       =0 Disable soft SMI
+       SMMS is 	 (DR6.bit12)
+	       =1 SMM was entered
+	       =0 SMM status cleared
+ 
+Flags Affected: None
+ 
+CPU mode: RM?,PM0
+ 
+Physical Form:		 SMI
+COP (Code of Operation): F1H
+Clocks:	     Am386SXLV : 357
+	     Am386DXLV : 325
+	     Am486xxxx : Don't know, do you?
+ 
+---------------------------------------------------
+SMINT - Software SMM Interrupt
+ 
+ 
+CPU:  Cyrix Cx486DX/DX2
+      IBM   BL486DX/DX2
+Note: Never in Cx486S/S2/D/D2
+ 
+ 
+Type of Instruction: System
+ 
+Instruction:  SMINT
+ 
+ 
+Description:
+	SAVE CPU STATE TO SMM HEADER AT THE TOP OF
+	SMM SPACE (defined by SMAR register);
+	ENTER SMM MODE;
+ 
+ 
+Format of SMM Header: Refer to Cyrix/IBM SMI Instruction
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: CPL=0, CCR1.bit1=1, SMAR size >= 30h.
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: SMINT
+COP (Code of Operation)	 : 0FH 7EH
+Clocks	IBM BL486DX: 24
+ 
+ 
+ 
+---------------------------------------------------
+SVDC  - Save Register and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  SVDC dest,sreg
+ 
+ 
+Description:
+ 
+	dest <- sreg [selector,shadow_descriptor]
+ 
+	; dest is register and descriptor structure (see below)
+ 
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: SVDC mem80,sreg
+COP (Code of Operation)	 : 0FH 78H  [mm sreg3 mmm]
+Clocks	IBM BL486DX: 18
+ 
+Note: sreg3 is: 000 ES
+		001 CS
+		010 SS
+		011 DS
+		100 FS
+		101 GS
+ 
+ 
+ 
+---------------------------------------------------
+SVLDT  - Save LDTR and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  SVLDT dest
+ 
+ 
+Description:
+ 
+	dest <- LDTR [selector,shadow_descriptor]
+ 
+	; dest is register and descriptor structure (see below)
+ 
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: SVLDT mem80
+COP (Code of Operation)	 : 0FH 7AH  [mm 000 mmm]
+Clocks	IBM BL486DX: 18
+ 
+ 
+ 
+ 
+---------------------------------------------------
+SVTS  - Save TR and Descriptor
+ 
+ 
+CPU:  Cyrix Cx486S/S2/D/D2/DX/DX2
+      IBM   BL486DX/DX2
+      TI    Potomac
+ 
+Type of Instruction: System
+ 
+Instruction:  SVTS dest
+ 
+ 
+Description:
+ 
+	dest <- TR [selector,shadow_descriptor]
+ 
+	; dest is register and descriptor structure (see below)
+ 
+ 
+ 
+Format or Register and Descriptor Structure:
+	+00	Limit (15-0)
+	+02	Base  (15-0)
+	+04	Base  (23-16)
+	+05	AR byte
+	+06	AR2/Limit (19-16)
+	+07	Base  (31-24)
+	+08	Selector
+	Length of structure is 10h
+ 
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: (1) and (2) and (3) and [(4A) or (4B)]
+ 
+ 
+	   1) CPL=0
+	   2) CCR1.bit1=1  ; SMI enable
+	   3) SMAR size > 0
+	   4A) in SMM
+	   4B) CCR1.bit2=1 ; SMAC is on
+ 
+ 
+ 
+++++++++++++++++
+ 
+Physical Form: SVTS mem80
+COP (Code of Operation)	 : 0FH 7CH  [mm 000 mmm]
+Clocks	IBM BL486DX: 18
+ 
+ 
+ 
+ 
+---------------------------------------------------
+UMOV  - Mov Data to Main (User) Memory
+ 
+ 
+CPU:  AMD Am386SXLV,Am386DXLV
+      AMD 486s
+      IBM 486SLC2
+ 
+Type of Instruction: Special System
+ 
+Instruction: UMOV dest,sorc
+ 
+ 
+Description:
+ 
+	  dest <- sorc;
+ 
+Note!!!!!: But all memory operands placed in Main memory only !
+	  ( i.e. not in SMRAM then in SMM )
+ 
+WARNING: UMC's CPUs hang on execution this instruction !!!!!!
+	 check that CPU is none UMC's before
+ 
+Note:	 On Cyrix's CPUs UMOV opcodes do nothing. This way used to
+	 determination of Cyrix Microprocessors.
+ 
+Note:	 Pentium P54C never support this instruction
+ 
+Flags Affected:	 None
+ 
+CPU mode: RM?,PM?,VM?,SMM
+ 
++++++++++++++++++++++++
+Physical Form:		   UMOV	 r/m8,r8
+COP (Code of Operation)	 : 0FH 10H Postbyte
+ 
+Clocks:
+	  Am386SXLV or AM386DXLV:  2/2
+	  IBM 486SLC2		:  4
++++++++++++++++++++++
+Physical Form:		   UMOV	 r/m16,r16
+			   UMOV	 r/m32,r32
+COP (Code of Operation)	 : 0FH 11H Postbyte
+ 
+Clocks:
+	  Am386SXLV or AM386DXLV:  2/2
+	  IBM 486SLC2		:  4
++++++++++++++++++++++++
+Physical Form:		   UMOV	 r8,r/m8
+COP (Code of Operation)	 : 0FH 12H Postbyte
+ 
+Clocks:
+	  Am386SXLV or AM386DXLV:  2/4
+	  IBM 486SLC2		:  4
++++++++++++++++++++++
+Physical Form:		   UMOV	 r16,r/m16
+			   UMOV	 r32,r/m32
+COP (Code of Operation)	 : 0FH 13H Postbyte
+ 
+Clocks:
+	  Am386SXLV or AM386DXLV:  2/4
+	  IBM 486SLC2		:  4
+ 
+ 
+---------------------------------------------------
+WBINVD	- Write Back and Invalidate Cache
+ 
+ 
+CPU:  I486 +
+ 
+Type of Instruction: System
+ 
+Instruction: WBINVD
+ 
+Description:
+	     IF (internal cache is WB and in WB mode) THEN
+		      {
+		      Write Back Internal Cache;
+		      }
+	     Flush internal cache;
+	     Signal external cache to Write Back;
+	     Signal external cache to Flush;
+ 
+ 
+Notes: This instruction not work in Real Mode and  in
+Protected mode work only in ring 0 ;
+ 
+Flags Affected: None
+ 
+CPU mode: PM0,SMM
+ 
+Physical Form:		 INVD
+COP (Code of Operation): 0FH 09H
+Clocks: Cyrix Cx486SLC : 4
+	      i486     : 5
+	      Pentium  : 2000+
+ 
+---------------------------------------------------
+WRMSR  - Write to From Model Specified Register
+ 
+CPU:  Pentium (tm), IBM 486SLC2
+ 
+Type of Instruction: System
+ 
+Instruction: WRMSR
+ 
+Description:
+ 
+	IF (ECX is valid number of MSR) and (CPL=0)  THEN
+		  {
+		  MSR [ECX] <- EDX:EAX;
+		  }
+	    ELSE
+		  {
+		  General Protection Fault  INT 0DH (0)
+		  }
+	END
+ 
+ 
+ 
+Flags Affected: None
+ 
+Note: Refer to RDMSR for more Info.
+ 
+CPU mode: RM,PM0,SMM
+ 
+Physical Form:		 WRMSR
+COP (Code of Operation): 0FH 30H
+Clocks:	     Pentium   : 30-45
+ 
+---------------------------------------------------
+XADD  - Exchange and addition
+ 
+ 
+CPU:  i486+
+ 
+Type of Instruction: User
+ 
+Instruction: XADD dest,sorc
+ 
+ 
+Description:
+ 
+	  Temporary <- dest;
+	  dest	    <- dest + sorc;
+	  sorc	    <- Temporary;
+ 
+ 
+Flags Affected:	 ZF,OF,SF,AF,PF,CF ( like ADD instruction ) ( see description)
+ 
+CPU mode: RM,PM,VM,SMM
+ 
++++++++++++++++++++++++
+Physical Form:		   XADD	 r/m8,r8
+COP (Code of Operation)	 : 0FH C0H Postbyte
+ 
+Clocks:
+	   Intel i486	 :  3/4
+	 Cyrix Cx486SLC	 :  3/6
+	 Pentium (tm)	 :  3/4
+ 
+Penalty if cache miss	 :
+	  Intel i486	 : 6/2	; Unlocked/Locked
+	 Cyrix Cx486SLC	 : 0	; N/A
++++++++++++++++++++++
+Physical Form:		   XADD	 r/m16,r16
+			   XADD	 r/m32,r32
+COP (Code of Operation)	 : 0FH C1H Postbyte
+ 
+Clocks:
+	   Intel i486	 :  3/4
+	 Cyrix Cx486SLC	 :  3/6
+	 Pentium (tm)	 :  3/4
+ 
+Penalty if cache miss	 :
+	  Intel i486	 : 6/2	; Unlocked/Locked
+	 Cyrix Cx486SLC	 : 1	; N/A
+ 
+ 
+ 
+---------------------------------------------------
+XBTS	-  Extract  Bits String
+ 
+ 
+CPU:  80386 step A0-B0 only
+ 
+Type of Instruction: User
+ 
+Instruction:  XBTS dest,base,bitoffset,len
+ 
+ 
+Description:
+	     Write bit string length  bits from bitfield, defined by
+	     and bitsoffset  from this base to start of
+	    the field to read. String read from this start field bit to
+	    higher memory addresses or register bits.
+	    And after it string placed to  operand, lowest bit of
+	    register or memory to bit 0 of .
+ 
+Note:	     Use SHLD/SHRD instructions for extract bits strings.
+	     On 80386 steps B1+ this opcode generation INT 6,
+	     and on some of 486 other instruction replace this
+	     instruction opcode.
+ 
+ 
+Flags Affected: None
+ 
+CPU mode: RM,PM,VM
+ 
++++++++++++++++++++++++
+Physical Form:	  XBTS	r16,r/m16,AX,CL
+		  XBTS	r32,r/m32,EAX,CL
+COP (Code of Operation)	 : 0FH A6H Postbyte
+ 
+Clocks:		XBTS
+80386:		6/13
+ 
+ 
+-----------------------------------------------------
+APPENDIX	A0
+Cyrix Cx486SLC/DLC configuration Registers
+ 
+Register	Full Register Name		Index	size(bits)
+CCR0	Configuration Control Register #0	C0H	8
+CCR1	Configuration Control Register #1	C1H	8
+NCR1	Non-cacheble Region #0			C4H-C6H	24
+NCR2	Non-cachable Region #1			C7H-C9H	24
+NCR3	Non-cacheble Region #2			CAH-CCH
+NCR4	Non-cacheble Region #4			CDH-CFH	24
+ 
+ 
+For access to this register You need to do:
+ 
+A) write INDEX_OF_REGISTER to I/O port #22H
+B) wait 5-6 clocks
+D) read/write DATA from/to register via I/O port #23
+ 
+Note: If Index of register not in range C0H..CFH then Cyrix CPU
+      generated external bus cycle. If You try to read I/O port
+      #22H CPU will generated external bus cycle too. Then index
+      is out of range all operations with port #23H will generate
+      external bus cycle.
+ 
+State After Reset:
+	CCR0	00H
+	CCR1	xxxx xxx0B
+	NCR1	000Fh (SLC)
+	NCR2	0
+	NCR3	0
+	NCR4	0
+ 
+format of registers:
+ 
+CCR0:
+Bit	Name	Description
+7	SUSPEND
+	If =1 then enable SUSP# and SUSPA# pins, which used for
+	put CPU in PowerSave mode.
+	If =0 disable
+ 
+6	CO	(Cache Organisation)
+	If =0 2ways set associative
+	If =1 Dirrect Mapped
+ 
+5	BARB
+	If =1 then enable flushing internal cache when begining
+	HOLD state.
+	IF =0 disable.
+ 
+4	FLUSH
+	If =1 enable input pin FLUSH#
+	if =0 disable
+ 
+3	KEN
+	If =1 enable input pin KEN#
+	if =0 disable
+ 
+2	A20M
+	If =1 enable input pin A20M#
+	if =0 disable
+ 
+1	NC1
+	If=1 then 640KB-1MB area never caching
+	If=0 caching (but see NCRi)
+ 
+0	NC0
+	If=1 then first 64K of each 1MB bounds not caching,
+	when in Real or Virtual8086 mode
+	If =0 caching
+ 
+ 
+CCR1:
+Bit	Name	Description
+7-1	Reserved
+0	RPL
+	If =1 then enable RPLSET,RPLVAL# pins
+	If =0 this pins are disable and float.
+ 
+NCRi:
+Byte	Bits	Description
+0	7-0	Address bits A31-A24 of non-cacheble region  start
+		(Reserved for SLC)
+1	7-0	Address bits A23-A16 of non-cachable region start
+2	7-4	Address bits A15-A12 of non-cacheble region start
+2	3-0	Size of non-cacheble block:
+		0000  Disable NCRi
+		0001  4K
+		0010  8K
+		0011  16K
+		0100  32K
+		0101  64K
+		0110  128K
+		0111  256K
+		1000  512K
+		1001  1M
+		1010  2M
+		1011  4M
+		1100  8M
+		1101  16M
+		1110  32M
+		1111  4G
+ 
+NCRi bytes:
+ 
+ 
+	Byte
+NCRi	0	1	2
+NCR1	C4H	C5H	C6H
+NCR2	C7H	C8H	C9H
+NCR3	CAH	CBH	CCH
+NCR4	CDH	CDH	CEH
+ 
+ 
+ 
+ 
+ 
+---------------------------------------------------
+APPENDIX	A1
+Cyrix Cx486S/S2/D/D2/DX/DX2
+IBM   BL486DX/DX2
+configuration Registers
+ 
+Register	Full Register Name		Index	size(bits)
+CCR1	Configuration Control Register #1	C1H	8
+CCR2	Configuration Control Register #2	C2H	8
+CCR3	Configuration Control Register #3	C3H	8
+SMAR	SMM Address Region			CDH-CFH 24
+DIR0	Device Identification register #0	FEH	8
+DIR1	Device Identification register #1	FFH	8
+ 
+ 
+For access to this register You need to do:
+ 
+A) write INDEX_OF_REGISTER to I/O port #22H
+B) wait 5-6 clocks
+D) read/write DATA from/to register via I/O port #23
+ 
+Note: If Index of register not in range C0H..CFH,FEH,FFH then Cyrix
+      CPU generated external bus cycle. If You try to read I/O port
+      #22H CPU will generated external bus cycle too. Then index
+      is out of range all operations with port #23H will generate
+      external bus cycle.
+ 
+State After Reset:
+	CCR1	00H
+	CCR2	00H
+	CCR3	00H
+	SMAR	0
+	DIR0	see DIR0 description
+	DIR1	see DIR1 description
+ 
+ 
+format of registers:
+ 
+CCR1:
+Bit	Name	Description
+7..5		Reserved
+ 
+4	NO_LOCK	(Negate LOCK#)
+3	MMAC	(Main Memory Access)
+		If =1 then all data access which occur within SMI
+		routine (when SMAC=1) accessing main memory instead
+		SMM space
+		=0 No affects on access
+2	SMAC	(System Managment Memory Access)
+		If =1 Any access within SMM memory space issued with SMAADS#
+		output active, SMI# ignored
+		=0 No affects on access
+1	SMI	(Enable SMM pins)
+		If =1 then enable SMI# i/o pin and SMADS# output pin
+		=0 Float it
+0	RPL	(Enable RPL pins)
+		If=1 then enable output pins RPLSET(1-0) and RPLVAL#
+		=0 Float it
+ 
+ 
+ 
+CCR2:
+Bit	Name	Description
+7	SUSP	(Enable Suspend pins)
+		If =1 SUSP# input and SUSPA# output pins enabled
+		=0 Float
+6	BWRT	(Enable Burst Write Cycle)
+		If =1 enable use of 16byte burst WB cycle
+		=0 disable
+5	BARB	(Enable cache coherency on Bus Arbitration)
+		If =1 enable write back of all dirty cache data when
+		HOLD is requered and prior to asserting HLDA.
+		=0 isable
+4	WT1	(Write-Through Region 1)
+		If =1 Forces all writes to the 640KB-1MB region that
+		hit in cache issued on the external bus
+3	HALT	(Suspend on HALT)
+		If =1 CPU enters suspend mode following execution
+		HLT instruction.
+2	LOCK_NW (Lock NW bit)
+		If =1 Prohibits changing the state of NW bit in CR0
+1	WBAK	(Enable WB Cache Interface pins)
+		If =1 then enable INVAL,WM_RST and HITM# pins
+		=0 float it
+0		Reserved
+ 
+ 
+CCR3:
+Note: Cyrix Cx486S/D never have CCR3 register.
+Bit	Name	Description
+7..2		Reserved
+1	NMIEN	(NMI Enable)
+		If =1 then NMI enable during SMM
+		If =0 NMI don't recognizing during SMM
+0      SMI_LOCK (SMM Register Lock)
+		If =1 the following SMM control bits can not
+		be modified:
+		     CCR1: bits 1,2,3
+		     CCR3: bit 1
+		But this bit may be changed in SMM.
+		This bit (SMI_LOCK) clearing RESET only.
+ 
+ 
+SMAR:
+(Index CDh)
+Bit	Description
+7..0	A31..A24 bits of starting adress of SMM region
+(Index CEh)
+Bit	Description
+7..0	A23..A16 bits of starting adress of SMM region
+(Index CFh)
+Bit	Description
+7..4	A15..A12 bits of starting adress of SMM region
+3..0	Size of SMM region:
+	0000	SMM region disabled
+	0001	4K
+	0010	8K
+	0011	16K
+	0100	32K
+	0101	64K
+	0110	128K
+	0111	256K
+	1000	512K
+	1001	1M
+	1010	2M
+	1011	4M
+	1100	8M
+	1101	16M
+	1110	32M
+	1111	4K
+ 
+ 
+DIR0:
+Note: Cyrix Cx486S/D never have DIR0 register.
+Bit	Description
+7..0	(Device Identification)
+	for Cx486DX/BL486DX   = 1Ah
+	for Cx486DX2/BL486DX2 = 1Bh
+ 
+ 
+DIR1:
+Note: Cyrix Cx486S/D never have DIR1 register.
+Bit	Name	Description
+7..4	SID	Stepping Identificator
+3..0	RID	Revision Identification
+	Note: For Cx486DX2-001 DIR1=08h
+ 
+ 
+ 
+ 
+------------------------------------------------
+APPENDIX B
+Codes which returned after Reset in EDX
+ 
+			      DH	 DL
+Type of CPU   Steppin	   Model ID   Revision
+ 
+i386DX		A	     (00h)	???
+		B0-B10	      03h	03h
+		D0			05h
+		D1-D2			08h
+ 
+Am386DX/DXL	A	      03h	05h
+		B			08h
+ 
+i386SX		A0	      23h	04h
+		B			05h
+		C,D,E			08h
+ 
+Am386SX/SXL	A1	      23h	05h
+		B			08h
+ 
+i386CX		A	      23h	09h
+ 
+i386EX		A	      23h	09h
+ 
+i386SX static	???	      23h	09h
+ 
+i376		A0	      33h	05h
+		B			08h
+ 
+i386SL		A0-A3	      43h	0xh (05H)
+		B0-B1			    1xh
+ 
+RapidCAD (tm)	A	      03h	40h
+ 
+IBM 386SLC	A	      A3h	xxh
+ 
+Cx486SLC	A	      04h	10h
+ 
+i486DX		A0/A1	      04h	00h
+		B2-B6			01h
+		C0			02h
+		C1			03h
+		D0			04h
+		cA2,cA3			10h
+		cB0,cB1			11h
+ 
+Am486DX		any	      04h	12h
+ 
+UMC U5SD	any	      04h	1xh
+ 
+i486SX		A0	      04h	20h
+		B0			22h
+		D ??			23h ; SL Enhanced 1994
+		cA0			27h
+		cB0			28h
+		E ??			2Ah ; SL Enhanced '94-'95
+ 
+i487SX		A0	      04h	20h
+		B0			21h
+ 
+UMC U5S		any	      04h	23h
+ 
+UMC U5SX 486-A	any	      04h	23h
+ 
+i486DX2	&	A0-A2	      04h	32h
+OverDrive (tm)	B1			33h
+		C ??			35h ; SL Enhanced 1994
+ 
+Am486DX2	any	      04h	32h
+ 
+Am486DXL2	any	      04h	32h
+ 
+Am486DX2	any	      04h	32h ; 3 VOLT (Have 3xCLOCK mode!!!)
+ 
+Am486DX2-80	any	      04h	32h
+ 
+i486SL		A	      04h	40h
+ 
+IntelSX2 (tm)	A	      04h	5xh
+i486SX2		??	      04h	5Bh
+IntelSX2 (tm)	A	      04h	5xh
+OverDrive (tm)
+ 
+ 
+WB IntelDX2	A	      04h	7xh
+(P24D)
+ 
+ 
+IBM BL486DX2	A	      04h	80h   ; PRELIMINARY
+ 
+IntelDX4 (tm)	A	      04h	80h
+ 
+IBM  486SLC	A	      A4h	0xh
+ 
+IBM  486SLC2	A	      A4h	1xh
+		B			2xh
+ 
+IBM  486BLX3	A	      84h	xxh
+ 
+Cyrix M5	all	      00h	05h
+(Cx486S/D)
+ 
+Cyrix M6	all	      00h	06h
+(Cx486DX)
+ 
+Cyrix M7	all	      00h	07h
+(Cx486DX2)
+ 
+Pentium (P5)	Ax	      05h	0xh
+		Bx	      05h	1xh
+			      05h	15h	; Have FPU bug!
+			      05h	17h	; Never have FPU bug!!
+ 
+Pentium (P54C)	any	      05h	2xh
+			      05h	21h	; Have FPU bug!
+			      05h	22h	; Have FPU bug!
+			      05h	25h	; No   FPU bug!!
+ 
+Pentium Overdrive	      15h	3xh
+(Vcc=5V)(P24T)
+ 
+Pentium Overdrive	      15h	??h
+(Vcc=3.3V) (P24CT)
+ 
+P6			      06h	xxh
+ 
+ 
+--------------------------------------------
+APPENDIX C0
+iCOMP index for Intel's Microprocessors
+ 
+ 
+i386SX-20		32
+i386SX-25		39
+i386SL-25		41
+i386DX-25		49
+i386DX-33		68
+i486SX-20		78
+i486SX-25		100  ; Base model for test iCOMP=100 by define
+i486DX-25		122
+i486SX-33		136
+i486DX-33		166
+IntelSX2-25/50		180
+i486DX2-25/50		231
+i486DX-50		249
+i486DX2-33/66		297
+IntelDX4-25/75		319  ; P24C
+IntelDX4-33/100		435  ; P24C
+Pentium OverDrive-25/63	443  ; P24T
+Pentium-(510\60)	510  ; P5
+Pentium-(567\66)	567  ; P5
+Pentium OverDrive-33/83 581  ; P24T
+Pentium-(610\75)	610  ; P54C
+Pentium-(735\90)	735  ; P54C
+Pentium-(815\100)	815  ; P54C
+ 
+ 
+ 
+ 
+----------------------------------------------
+APPENDIX C1
+Cyrix Microprocessors Relative Perfomance
+ 
+Cyrix Inc. Used for declaration of perfomance of
+theys microprocessors tests based on PC Bench 8.0
+and normalization.
+ 
+CPU		Perfomance Scores
+Cx486SLC-25	36
+Cx486SLC-33	39
+Cx486SLC2-50	40
+Cx486DLC-33	69
+Cx486DLC-40	83
+Cx486DX-33	100	; <--- Base Point
+Cx486DX-40	118
+Cx486DX2-50	139
+Cx486DX-50	148
+Cx486DX2-66	179
+Cx486DX2-V80	209
+ 
+ 
+ 
+ 
+------------------------------------------------
+APPENDIX D
+Pentium P54C+ Build-in APIC
+(Advanced programmable Interrupt Controller)
+ 
+ 
+Base Address of Build-in APIC in memory location
+is 0FEE00000H.
+ 
+Map of APIC REgisters:
+ 
+Offset (hex)	Description			Read/Write state
+0		Reserved
+10		Reserved
+20		Local APIC ID			R/W
+30		Local APIC Version		R
+40-70		Reserved
+80		Task Priority Register		R/W
+90		Arbitration Priority Register	R
+A0		Processor Priority Register	R
+B0		EOI Register			W
+C0		Remote read			R
+D0		Logical Destination		R/W
+E0		Destination Format Register	0..27  R
+						28..31 R/W
+F0		Spurious Interrupt Vector Reg.	0..3   R
+						4..9   R/W
+100-170		ISR  0-255			R
+180-1F0		TMR  0-255			R
+200-270		IRR  0-255			R
+280		Error Status Register		R
+290-2F0		Reserved
+300		Interrupt Command Reg. (0-31)	R/W
+310		Interrupt Command Reg. (32-63)	R/W
+320		Local Vector Table (Timer)	R/W
+330-340		Reserved
+350		Local Vector Table (LINT0)	R/W
+360		Local Vector Table (LINT1)	R/W
+370		Local Vector Table (ERROR)	R/W
+380		Initial Count Reg. for Timer	R/W
+390		Current Count of Timer		R
+3A0-3D0		Reserved
+3E0		Timer Divide Configuration Reg.	R/W
+3F0		Reserved
+ 
+ 
+ 
+ 
+---------------------------------------------
+APPENDIX E
+Pentium (tm) Processor Pairing Instruction
+(Integer part only, nor FPU)
+ 
+Pentium (tm) is superscalar microprocessor
+i.e. it may execute >1 instruction per CLK
+cycle. It may execute maximum 2 instruction
+per cycle.It have two integer pipes to execute
+instruction. This pipes not same, and some
+instruction may pairing (i.e. execute together)
+(only if not link with this 2 instruction)
+only in U pipe, some other only in V pipe, other
+in any pipe,other absolutely not pairing and they
+executed on U pipe only.
+ 
+Note:
+	PU - is pairable if issued to U pipe
+	PV - is pairable if issued to V pipe
+	UV - pairable in either pipe
+ 
+ 
+ 
+ 
+ADC	Reg,Reg		PU
+	Reg,Mem		PU
+	Reg,Imm		PU
+	Mem,Reg		PU
+	Mem,Imm		PU
+ADD	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+AND	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+CALL	direct		PV
+CMP	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+DEC	Reg		UV
+	Mem		UV
+INC	Reg		UV
+	Mem		UV
+Jcc	any		PV
+JMP	Short		PV
+	Direct		PV
+LEA	Reg,Mem		UV
+MOV	Reg,Reg/Mem/Imm	UV
+	Mem,Reg		UV
+NOP			UV
+OR	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+POP	Reg		UV
+PUSH	Reg		UV
+	Imm		UV
+Rotates/Shifts:
+	Reg,1		PU
+	Mem,1		PU
+	Reg,Imm		PU
+	Mem,Imm		PU
+SUB	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+TEST	Reg,Reg		UV
+	Mem,Reg		UV
+	Acc,Imm		UV
+XOR	Reg,Reg		UV
+	Reg,Mem		UV
+	Reg,Imm		UV
+	Mem,Reg		UV
+	Mem,Imm		UV
+ 
+For more information refer to:
+1) Optimization for Intel's 32-Bit Processors
+  (Application Note AP-500)
+  Gary CArleton)
+  // Intel Corp. 1993
+  // Order Number 241799
+2) Supplement to the Pentium (tm) Processor User's
+   Manual
+  // Intel Corp. 1993.
+ 
+ 
+------------------------------------------------------------
+APPENDIX  F    NON FP OPCODES
+ 
+ 
+Base Format of opcodes:
+   
+ 
+ 
+Format of Postbyte:
+ 
+  MM RRR MMM
+ 
+MM  - Memory addresing mode
+RRR - Register operand address
+MMM - Memory operand address
+ 
+ 
+RRR	Register Names
+Fields	8bit	16bit	32bit
+000	AL	AX	EAX
+001	CL	CX	ECX
+010	DL	DX	EDX
+011	BL	BX	EBX
+100	AH	SP	ESP
+101	CH	BP	EBP
+110	DH	SI	ESI
+111	BH	DI	EDI
+ 
+ 
+16bit memory (No 32 bit memory address prefix):
+MMM	Default	MM  Field
+Field	Sreg	00		01		10		11=MMM is reg
+000	DS	[BX+SI]		[BX+SI+O8]	[BX+SI+O16]
+001	DS	[BX+DI]		[BX+DI+O8]	[BX+SI+O16]
+010	SS	[BP+SI]		[BP+SI+O8]	[BP+SI+O16]
+011	SS	[BP+DI]		[BP+DI+O8]	[BP+DI+O16]
+100	DS	[SI]		[SI+O8]		[SI+O16]
+101	DS	[DI]		[DI+O8]		[DI+O16]
+110	SS	[O16]		[BP+O8]		[BP+O16]
+111	DS	[BX]		[BX+O8]		[BX+O16]
+Note: MMM=110,MM=00 Default Sreg is DS !!!!
+ 
+32bit memory (Has 67h 32 bit memory address prefix):
+MMM	Default	MM  Field
+Field	Sreg	00		01		10		11=MMM is reg
+000	DS	[EAX]		[EAX+O8]	[EAX+O32]
+001	DS	[ECX]		[ECX+O8]	[ECX+O32]
+010	DS	[EDX]		[EDX+O8]	[EDX+O32]
+011	DS	[EBX]		[EBX+O8]	[EBX+O32]
+100 see SIB	[SIB]		[SIB+O8]	[SIB+O32]
+101	SS	[O32]		[EBP+O8]	[EBP+O32]
+110	DS	[ESI]		[ESI+O8]	[ESI+O32]
+111	DS	[EDI]		[EDI+O8]	[EDI+O32]
+Note: MMM=110,MM=00 Default Sreg is DS !!!!
+ 
+ 
+SIB is (Scale/Base/Index):
+  SS  BBB  III
+Note: SIB address calculated as :
+	=+*(2^(Scale))
+ 
+Field	Default	Base
+BBB	Sreg	Register	Note
+000	DS	EAX
+001	DS	ECX
+010	DS	EDX
+011	DS	EBX
+100	SS	ESP
+101	DS	O32		If MM=00   (Postbyte)
+	SS	EBP		If MM<>00  (Postbyte)
+110	DS	ESI
+111	DS	EDI
+ 
+Field	Index
+III	register	Note
+000	EAX
+001	ECX
+010	EDX
+011	EBX
+100			Never Index SS can be 00
+101	EBP
+110	ESI
+111	EDI
+ 
+Field	Scale coefficient
+SS	=2^(SS)
+00	1
+01	2
+10	4
+11	8
+ 
+ 
+Note:
+       this code are for 8086 and all other processors
+      NECs  : for NEC/Sony V20/V30/V40/V50 and all clones and upgrades
+      186+  : for 186/188 and higher
+      286+  : for 80286 and higher
+      386+  : for 80386 and higher
+      486+  : for i486 and higher
+      Pentium : for Pentiym
+       : specified
+ 
+ 
+ 
+ 
+Main Table [TABLE00]:
+ 
+00	ADD	mem8,reg8
+01	ADD	mem,reg
+02	ADD	reg8,mem8
+03	ADD	reg,mem
+04	ADD	AL,imm8
+05	ADD	AX,imm
+06	PUSH	ES
+07	POP	ES
+08	OR	mem8,reg8
+09	OR	mem,reg
+0A	OR	reg8,mem8
+0B	OR	reg,mem
+0C	OR	AL,imm8
+0D	OR	AX,imm
+0E	PUSH	CS
+0F	POP	CS	; 8088 non CMOS versions
+	>>>  TABLE 01	; NECs & 286+
+	Invalid Opcode	; 186/188
+ 
+10	ADC	mem8,reg8
+11	ADC	mem,reg
+12	ADC	reg8,mem8
+13	ADC	reg,mem
+14	ADC	AL,imm8
+15	ADC	AX,imm
+16	PUSH	SS
+17	POP	SS
+18	SBB	mem8,reg8
+19	SBB	mem,reg
+1A	SBB	reg8,mem8
+1B	SBB	reg,mem
+1C	SBB	AL,imm8
+1D	SBB	AX,imm
+1E	PUSH	DS
+1F	POP	DS
+ 
+ 
+20	AND	mem8,reg8
+21	AND	mem,reg
+22	AND	reg8,mem8
+23	AND	reg,mem
+24	AND	AL,imm8
+25	AND	AX,imm
+26	ES:	segment prefix
+27	DAA
+28	SUB	mem8,reg8
+29	SUB	mem,reg
+2A	SUB	reg8,mem8
+2B	SUB	reg,mem
+2C	SUB	AL,imm8
+2D	SUB	AX,imm
+2E	CS:	segment prefix
+2F	DAS
+ 
+30	XOR	mem8,reg8
+31	XOR	mem,reg
+32	XOR	reg8,mem8
+33	XOR	reg,mem
+34	XOR	AL,imm8
+35	XOR	AX,imm
+36	SS:	segment prefix
+37	AAA
+38	CMP	mem8,reg8
+39	CMP	mem,reg
+3A	CMP	reg8,mem8
+3B	CMP	reg,mem
+3C	CMP	AL,imm8
+3D	CMP	AX,imm
+3E	DS:	segment prefix
+3F	AAS
+ 
+40	INC	AX
+41	INC	CX
+42	INC	DX
+43	INC	BX
+44	INC	SP
+45	INC	BP
+46	INC	SI
+47	INC	DI
+48	DEC	AX
+49	DEC	CX
+4A	DEC	DX
+4B	DEC	BX
+4C	DEC	SP
+4D	DEC	BP
+4E	DEC	SI
+4F	DEC	DI
+ 
+ 
+50	PUSH	AX
+51	PUSH	CX
+52	PUSH	DX
+53	PUSH	BX
+54	PUSH	SP
+55	PUSH	BP
+56	PUSH	SI
+57	PUSH	DI
+58	POP	AX
+59	POP	CX
+5A	POP	DX
+5B	POP	BX
+5C	POP	SP
+5D	POP	BP
+5E	POP	SI
+5F	POP	DI
+ 
+60	PUSHA			;NECs & 186+
+61	POPA			;NECs & 186+
+62	BOUND	reg,mem		;NECs & 186+
+63	ARPL	reg,mem		;286+ PM
+64	FS:	segment prefix	;386+
+65	GS:	segment prefix	;386+
+66	Memory access size prefix	;386+
+67	Operands size prefix		;386+
+68	PUSH	imm		;NECs & 186+
+69	IMUL	reg,imm,mem	;NECs & 186+
+6A	PUSH	imm8		;NECs & 186+
+6B	IMUL	reg,imm8,mem	;NECs & 186+
+6C	INSB			;186+
+6D	INS			;186+
+6E	OUTSB			;186+
+6F	OUTS			;186+
+ 
+70	JO	rel8
+71	JNO	rel8
+72	JC	rel8
+73	JNC	rel8
+74	JZ	rel8
+75	JNZ	rel8
+76	JNA	rel8
+77	JA	rel8
+78	JS	rel8
+79	JNS	rel8
+7A	JP	rel8
+7B	JNP	rel8
+7C	JL	rel8
+7D	JNL	rel8
+7E	JNG	rel8
+7F	JG	rel8
+ 
+ 
+80	code extention [1]
+81	code extention [2]
+82	code extention [3]
+83	code extention [4]
+84	TEST	mem8,reg8
+85	TEST	mem,reg
+86	XCHG	mem8,reg8
+87	XCHG	mem,reg
+88	MOV	mem8,reg8
+89	MOV	mem,reg
+8A	MOV	reg8,mem8
+8B	MOV	reg,mem
+8C	code extention [5]
+8D	LEA	reg,mem
+8E	code extention [6]
+8F	code extention [7]
+ 
+90	NOP
+91	XCHG	AX,CX
+92	XCHG	AX,DX
+93	XCHG	AX,BX
+94	XCHG	AX,SP
+95	XCHG	AX,BP
+96	XCHG	AX,SI
+97	XCHG	AX,DI
+98	CBW
+66 98	CWDE		;386+
+99	CWD
+66 99	CDQ		;386+
+9A	CALL	FAR	seg:offs
+9B	WAIT
+9C	PUSHF
+66 9C	PUSHFD		; 386+
+9D	POPF
+66 9D	POPFD		; 386+
+9E	SAHF
+9F	LAHF
+ 
+A0	MOV	AL,[imm]
+A1	MOV	AX,[imm]
+A2	MOV	[imm],AL
+A3	MOV	[imm],ax
+A4	MOVSB
+A5	MOVS
+A6	CMPSB
+A7	CMPS
+A8	TEST	AL,imm8
+A9	TEST	AX,imm
+AA	STOSB
+AB	STOS
+AC	LODSB
+AD	LODS
+AE	SCASB
+AF	SCAS
+ 
+ 
+B0	MOV	AL,imm8
+B1	MOV	CL,imm8
+B2	MOV	DL,imm8
+B3	MOV	BL,imm8
+B4	MOV	AH,imm8
+B5	MOV	CH,imm8
+B6	MOV	DH,imm8
+B7	MOV	BH,imm8
+B8	MOV	AX,imm
+B9	MOV	CX,imm
+BA	MOV	DX,imm
+BB	MOV	BX,imm
+BC	MOV	SP,imm
+BD	MOV	BP,imm
+BE	MOV	SI,imm
+BF	MOV	DI,imm
+ 
+C0	code extention [8]
+C1	code extention [9]
+C2	RET	NEAR	imm
+C3	RET	NEAR
+C4	LES	reg,mem
+C5	LDS	reg,mem
+C6	code extention [10]
+C7	code extention [11]
+C8	ENTER	imm,imm8	;NECs & 186+
+C9	LEAVE			;NECs & 186+
+CA	RET	FAR	imm
+CB	RET	FAR
+CC	INT	3
+CD	INT	imm8
+CE	INTO
+CF	IRET
+ 
+D0	code extention	[12]
+D1	code extention	[13]
+D2	code extention	[14]
+D3	code extention	[15]
+D4	AAM	imm8		 ; Note: NECs w/o imm8 but D4 0A only
+D5	AAD	imm8		 ; Note: NECs w/o imm8 but D4 0A only
+D6	SETALC			 ;286+
+D7	XLAT
+D8-DF	ESC	imm6,mem	 ; Note: Refer to future part
+				 ; Cooprocessor commands.
+ 
+E0	LOOPNZ	rel8
+E1	LOOPZ	rel8
+E2	LOOP	rel8
+E3	JCXZ	rel8
+66 E3	JECXZ	rel8		 ; 386+
+E4	IN	AL,imm8
+E5	IN	AX,imm8
+E6	OUT	imm8,AL
+E7	OUT	imm8,AX
+E8	CALL	NEAR	rel16
+E9	JMP	NEAR	rel16
+EA	JMP	FAR	seg:offs
+EB	JMP	SHORT	rel8
+EC	IN	AL,DX
+ED	IN	AX,DX
+EE	OUT	DX,AL
+EF	OUT	DX,AX
+ 
+F0	LOCK	prefix
+F1	SMI			 ; AMD Am386/486DXLV
+F2	REPNZ
+F3	REP/REPZ
+F4	HLT
+F5	CMC
+F6	code extention [16]
+F7	code extention [17]
+F8	CLC
+F9	STC
+FA	CLI
+FB	STI
+FC	CLD
+FD	STD
+FE	code extention [18]
+FF	code extention [19]
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+[TABLE 01]:
+Note: First Byte of Operation is 0Fh
+ 
+00	Extended Opcode 20				; 286+
+01	Extended Opcode 21				; 286+
+02	LAR	reg,mem					; 286+
+03	LSL	reg,mem					; 286+
+04	LOADALL		 ; Alternative 286		; 286 only
+05	LOADALL		 ; 286				; 286 only
+06	CLTS						; 286+
+07	LOADALL		 ; i386,486			; 386-486, Never Pentium
+	RES3		 ; AMD Am386zXLV
+	RES4		 ; AMD Am486DXLV
+	ICERET		 ; IBM 386SLC,486SLC,486SLC2
+08	INVD						; 486+
+09	WBINVD						; 486+
+0A-0F	Reserved, INT 6
+10	UMOV	mem8,reg8 ; Really different op. space	; 386-486,Never Pentium
+			  ; on AMD Amz86zXLV
+	TEST1	mem8,CL	  ; NEC V20+
+11	UMOV	mem,reg	  ; see 0Fh,10h
+	TEST1	mem,CL	  ; NEC V20+
+12	UMOV	reg8,mem8 ; see 0Fh,10h
+	CLEAR1	mem8,CL	  ; NEC V20+
+13	UMOV	reg,mem	  ; see 0Fh,10h
+	CLEAR1	mem,CL	  ; NEC V20+
+14	SET1	mem8,CL	  ; NEC V20+
+15	SET1	mem,CL	  ; NEC V20+
+16	NOT1	mem8,CL	  ; NEC V20+
+17	NOT1	mem,CL	  ; NEC V20+
+18	TEST1	mem8,imm8 ; NEC V20+
+19	TEST1	mem,imm8  ; NEC V20+
+1A	CLEAR1	mem8,imm8 ; NEC V20+
+1B	CLEAR1	mem,imm8  ; NEC V20+
+1C	SET1	mem8,imm8 ; NEC V20+
+1D	SET1	mem,imm8  ; NEC V20+
+1E	NOT1	mem8,imm8 ; NEC V20+
+1F	NOT1	mem,imm8  ; NEC V20+
+ 
+ 
+20	MOV	reg32,CRn ; 386+
+	ADD4S		  ; NEC V20+
+21	MOV	reg32,DRn ; 386+
+22	MOV	CRn,reg32 ; 386+
+	SUB4S		  ; NEC V20+
+23	MOV	DRn,reg32 ; 386+
+24	MOV	reg32,TRn ; 386-486 only (Pentium never have TRs)
+25
+26	MOV	TRn,reg32 ; 386-486 only
+	CMPS4S		  ; NEC V20+
+27	reserved opcode
+28	ROL4	mem8	  ; NEC V20+
+29	reserved opcode
+2A	ROL4	mem8	  ; NEC V20+
+2B-2F	reserved opcodes
+ 
+30	WRMSR		  ; Pentium, IBM 386SLC,486SLC/SLC2
+31	RDTSC		  ; Pentium
+	INS	reg8,reg8 ; NEC V20+   ; Note: NECINS
+32	RDMSR		  ; Pentium, IBM 386SLC,486SLC/SLC2
+33	EXT	reg8,reg8 ; NEC V20+
+ 
+ 
+78	SVDC	mem,sreg  ; Cyrix M5+
+79	RSDC	sreg,mem  ; Cyrix M5+
+7A	SVLDT	mem	  ; Cyrix M5+
+7B	RSLDT	mem	  ; Cyrix M5+
+7C	SVTS	mem	  ; Cyrix M5+
+7D	RSTS	mem	  ; Cyrix M5+
+7E	SMINT		  ; Cyrix M6+
+ 
+ 
+80	JO	rel16	; 386+
+81	JNO	rel16	; 386+
+82	JC	rel16	; 386+
+83	JNC	rel16	; 386+
+84	JZ	rel16	; 386+
+85	JNZ	rel16	; 386+
+86	JNA	rel16	; 386+
+87	JA	rel16	; 386+
+88	JS	rel16	; 386+
+89	JNS	rel16	; 386+
+8A	JP	rel16	; 386+
+8B	JNP	rel16	; 386+
+8C	JL	rel16	; 386+
+8D	JNL	rel16	; 386+
+8E	JNG	rel16	; 386+
+8F	JG	rel16	; 386+
+ 
+90	SETO	mem8	; 386+
+91	SETNO	mem8	; 386+
+92	SETC	mem8	; 386+
+93	SETNC	mem8	; 386+
+94	SETZ	mem8	; 386+
+95	SETNZ	mem8	; 386+
+96	SETNA	mem8	; 386+
+97	SETA	mem8	; 386+
+98	SETS	mem8	; 386+
+99	SETNS	mem8	; 386+
+9A	SETP	mem8	; 386+
+9B	SETNP	mem8	; 386+
+9C	SETL	mem8	; 386+
+9D	SETNL	mem8	; 386+
+9E	SETNG	mem8	; 386+
+9F	SETG	mem8	; 386+
+ 
+A0	PUSH	FS	; 386+
+A1	POP	FS	; 386+
+A2	CPUID		; 486 SL enhanced,Pentium,UMC,i386CX
+A3	BT	mem,reg	; 386+
+A4	SHLD	mem,reg,imm	;386+
+A5	SHLD	mem,reg,CL	;386+
+A6	XBTS	reg,mem,AX,CL	; Intel (!!!) 80386 steps A0-B0
+	CMPXCHG	mem8,reg8	; Intel (!!!) 80486 steps A0-B0
+A7	IBTS	mem,AX,CL,reg	; Intel (!!!) 80386 steps A0-B0
+	CMPXCHG mem,reg		; Intel (!!!) 80486 steps A0-B0
+A8	PUSH	GS	; 386+
+A9	POP	GS	; 386+
+AA	RSM		; i486 SL Enhanced, i386CX, Pentium etc
+AB	BTS	mem,reg ; 386+
+AC	SHRD	mem,reg,imm	;386+
+AD	SHRD	mem,reg,CL	;386+
+AE
+AF	IMUL	reg,mem	; 386+
+ 
+B0	CMPXCHG mem8,reg8	; 486+ (Intel B1+ step only)
+B0	CMPXCHG mem,reg		; 486+ (Intel B1+ step only)
+B2	LSS	reg,mem		; 386+
+B3	BTR	mem,reg		; 386+
+B4	LFS	reg,mem		; 386+
+B5	LGS	reg,mem		; 386+
+B6	MOVZX	reg,mem8	; 386+
+B7	MOVZX	reg32,mem	; 386+
+B8
+B9
+BA	code extention [22]
+BB	BTC	mem,reg		; 386+
+BC	BSF	reg,mem		; 386+
+BD	BSR	reg,mem		; 386+
+BE	MOVSX	reg,mem8	; 386+
+BF	MOVSX	reg32,mem	; 386+
+ 
+C0	XADD	mem8,reg8	; 486+
+C1	XADD	mem,reg		; 486+
+C2-C6	reserved opcodes
+C7	code extention [23]
+C8	BSWAP	EAX		; 486+
+C9	BSWAP	ECX		; 486+
+CA	BSWAP	EDX		; 486+
+CB	BSWAP	EBX		; 486+
+CC	BSWAP	ESP		; 486+
+CD	BSWAP	EBP		; 486+
+CE	BSWAP	ESI		; 486+
+CF	BSWAP	EDI		; 486+
+ 
+D0-FF	reserved opcodes
+FF	BRKEM	imm8		; NEC V20+
+ 
+ 
+**************************************************
+CODE EXTENTIONS:
+ 
+First byte(s) look at TABLES#00,01
+Next byte have format
+     MMOOOMMM  :  MM is memory mode (see postbyte)
+		  OOO select operation in this extention code field
+		  MMM is memory field (see Postbyte)
+ 
+ 
+ 
+Code Extention # 1
+(First byte(s) = 80h)
+Field
+OOO	Operation
+000	ADD	mem8,imm8
+001	OR	mem8,imm8
+010	ADC	mem8,imm8
+011	SBB	mem8,imm8
+100	AND	mem8,imm8
+101	SUB	mem8,imm8
+110	XOR	mem8,imm8
+111	CMP	mem8,imm8
+ 
+ 
+ 
+Code Extention # 2
+(First byte(s) = 81h)
+Field
+OOO	Operation
+000	ADD	mem,imm
+001	OR	mem,imm
+010	ADC	mem,imm
+011	SBB	mem,imm
+100	AND	mem,imm
+101	SUB	mem,imm
+110	XOR	mem,imm
+111	CMP	mem,imm
+ 
+Code Extention # 3
+(First byte(s) = 82h)
+Note: i486 Reserved opcode, Never INT6 but do nothing
+Field
+OOO	Operation
+000	ADD	mem8,simm8
+001
+010	ADC	mem8,simm8
+011	SBB	mem8,simm8
+100
+101	SUB	mem8,simm8
+110
+111	CMP	mem8,simm8
+ 
+ 
+Code Extention # 4
+(First byte(s) = 83h)
+Field
+OOO	Operation
+000	ADD	mem,simm8
+001
+010	ADC	mem,simm8
+011	SBB	mem,simm8
+100
+101	SUB	mem,simm8
+110
+111	CMP	mem,simm8
+ 
+ 
+Code Extention # 5
+(First byte(s) = 8Ch)
+Field
+OOO	Operation
+000	MOV	mem,ES
+001	MOV	mem,CS
+010	MOV	mem,SS
+011	MOV	mem,DS
+100	MOV	mem,FS	; 386+
+101	MOV	mem,GS	; 386+
+110
+111
+ 
+ 
+Code Extention # 6
+(First byte(s) = 8Eh)
+Field
+OOO	Operation
+000	MOV	ES,mem
+001	MOV	CS,mem	; Non CMOS version of 8086/8088 only
+010	MOV	SS,mem
+011	MOV	DS,mem
+100	MOV	FS,mem	; 386+
+101	MOV	GS,mem	; 386+
+110
+111
+ 
+Code Extention # 7
+(First byte(s) = 8Fh)
+Note: i486 can eat any OOO.
+Field
+OOO	Operation
+000	POP	mem
+001
+010
+011
+100
+101
+110
+111
+ 
+Code Extention # 8
+(First byte(s) = C0h)
+Field
+OOO	Operation
+000	ROL	mem8,imm8 ; 186+
+001	ROR	mem8,imm8 ; 186+
+010	RCL	mem8,imm8 ; 186+
+011	RCR	mem8,imm8 ; 186+
+100	SHL	mem8,imm8 ; 186+
+101	SHR	mem8,imm8 ; 186+
+110	SAL	mem8,imm8 ; 186+
+111	SAR	mem8,imm8 ; 186+
+ 
+Code Extention # 9
+(First byte(s) = C1h)
+Field
+OOO	Operation
+000	ROL	mem,imm8 ; 186+
+001	ROR	mem,imm8 ; 186+
+010	RCL	mem,imm8 ; 186+
+011	RCR	mem,imm8 ; 186+
+100	SHL	mem,imm8 ; 186+
+101	SHR	mem,imm8 ; 186+
+110	SAL	mem,imm8 ; 186+
+111	SAR	mem,imm8 ; 186+
+ 
+Code Extention # 10
+(First byte(s) = C6h)
+Note: i486 can eat any OOO field.
+Field
+OOO	Operation
+000	MOV	mem8,imm8
+001
+010
+011
+100
+101
+110
+111
+ 
+Code Extention # 11
+(First byte(s) = C7h)
+Note: i486 can eat any OOO field
+Field
+OOO	Operation
+000	MOV	mem,imm16
+001
+010
+011
+100
+101
+110
+111
+ 
+ 
+ 
+Code Extention # 12
+(First byte(s) = D0h)
+Field
+OOO	Operation
+000	ROL	mem8,1
+001	ROR	mem8,1
+010	RCL	mem8,1
+011	RCR	mem8,1
+100	SHL	mem8,1
+101	SHR	mem8,1
+110	SAL	mem8,1
+111	SAR	mem8,1
+ 
+ 
+Code Extention # 13
+(First byte(s) = D1h)
+Field
+OOO	Operation
+000	ROL	mem,1
+001	ROR	mem,1
+010	RCL	mem,1
+011	RCR	mem,1
+100	SHL	mem,1
+101	SHR	mem,1
+110	SAL	mem,1
+111	SAR	mem,1
+ 
+ 
+Code Extention # 14
+(First byte(s) = D2h)
+Field
+OOO	Operation
+000	ROL	mem8,CL
+001	ROR	mem8,CL
+010	RCL	mem8,CL
+011	RCR	mem8,CL
+100	SHL	mem8,CL
+101	SHR	mem8,CL
+110	SAL	mem8,CL
+111	SAR	mem8,CL
+ 
+ 
+ 
+Code Extention # 15
+(First byte(s) = D3h)
+Field
+OOO	Operation
+000	ROL	mem,CL
+001	ROR	mem,CL
+010	RCL	mem,CL
+011	RCR	mem,CL
+100	SHL	mem,CL
+101	SHR	mem,CL
+110	SAL	mem,CL
+111	SAR	mem,CL
+ 
+Code Extention # 16
+(First byte(s) = F6h)
+Field
+OOO	Operation
+000	TEST	mem8,imm8
+001
+010	NOT	mem8
+011	NEG	mem8
+100	MUL	mem8
+101	IMUL	mem8
+110	DIV	mem8
+111	IDIV	mem8
+ 
+Code Extention # 17
+(First byte(s) = F7h)
+Field
+OOO	Operation
+000	TEST	mem,imm16
+001
+010	NOT	mem
+011	NEG	mem
+100	MUL	mem
+101	IMUL	mem
+110	DIV	mem
+111	IDIV	mem
+ 
+ 
+Code Extention # 18
+(First byte(s) = FEh)
+Field
+OOO	Operation
+000	INC	mem8
+001	DEC	mem8
+010
+011
+100
+101
+110
+111
+ 
+Code Extention # 19
+(First byte(s) = FFh)
+Field
+OOO	Operation
+000	INC	mem
+001	DEC	mem
+010	CALL	NEAR	mem
+011	CALL	FAR	mem
+100	JMP	NEAR	mem
+101	JMP	FAR	mem
+110	PUSH	mem
+111
+ 
+Code Extention # 20
+(First byte(s) = 0FH,00H)
+Field
+OOO	Operation
+000	SLDT	mem	; 286+
+001	STR	mem	; 286+
+010	LLDT	mem	; 286+
+011	LTR	mem	; 286+
+100	VERR	mem	; 286+
+101	VERW	mem	; 286+
+110
+111
+ 
+Code Extention # 21
+(First byte(s) = 0Fh,01h)
+Field
+OOO	Operation
+000	SGDT	mem	; 286+
+001	SIDT	mem	; 286+
+010	LGDT	mem	; 286+
+011	LIDT	mem	; 286+
+100	SMSW	mem	; 286+
+101
+110	LMSW	mem	; 286+
+111	INVLPG	mem	; 486+
+ 
+ 
+Code Extention # 22
+(First byte(s) = 0Fh,BAh)
+Field
+OOO	Operation
+000
+001
+010
+011
+100	BT	mem,imm8 ; 386+
+101	BTS	mem,imm8 ; 386+
+110	BTR	mem,imm8 ; 386+
+111	BTC	mem,imm8 ; 386+
+ 
+Code Extention # 23
+(First byte(s) = 0Fh,C7h)
+Field
+OOO	Operation
+000
+001	CMPXCHG8B  mem	; Pentium
+010
+011
+100
+101
+110
+111
+ 
+ 
+ 
+ 
+ 
+------------------------------------------
+APPENDIX G
+ 
+BUGS & CPU IDENTIFICATION INFO
+ 
+1) How to separate i386SX and i386DX
+   (Cx486SLC and Cx486DLC)
+   Note:  With 386DX type CPU possible to used
+	  287 class NPX, and bit 4 in CR0
+	  ET - Extention Type on DX we may to
+	  clear to 0, but for SX and REAL 486
+	  this bit always 1.
+   Routine:
+	mov	eax,cr0
+	push	eax
+	and	al,0efh
+	mov	cr0,eax
+	mov	eax,cr0
+	test	al,10h
+	pop	eax
+	mov	cr0,eax
+	jne	SX/SLC
+	jmp	DX/DLC
+ 
+ 
+ 
+2) How to separate i486SX and i487SX/i486DX/DX2 etc
+	Routine:
+memory_location	DW	?
+	mov	memory_location,0
+	fninit
+	fstcw	memory_location
+	cmp	memory_location,037Fh
+	jz	i486SX
+	jmp	i486DX/DX2etc/i487SX
+ 
+ 
+3) How to separate Cyrix's CPUs and other
+       Be sure that Your CPU no Pentium before
+       UMOV executed on Intel and other in
+       Non SM modes as MOV.
+       But Cyrix executed this instruction as
+       Double NOP, and never generate INT 6.
+       So.
+Mem_Loc	DW  1
+	xor	ax,ax
+	umov	ax,Mem_Loc
+	or	ax,ax
+	jz	Cyrix
+	jmp	No_Cyrix
+ 
+ 
+4) Standart Way: Part 1
+   (Intel recomended this way)
+ 
+	pushf
+	pop	ax
+	and	ax,0fffh	; Clear bits 15..12
+	push	ax
+	popf
+	and	ax,0f000h	; Is bits 15..12=0 ?
+	jz	286_CPU
+	and	ax,8000h	; Is bit 15=0
+	jz	386_and_Higher
+	jmp	86_88and186_186etc
+ 
+ 
+5) How separate 86/88, 186/188 and NECs
+ 
+	mov	ax,1
+	mov	cl,33
+	shl	ax,cl
+	jnz	186_188
+	pusha		; Executed on 8086/8088 as JMP $+2
+	stc
+	jc	NECs
+	jmp	86_88
+ 
+ 
+------------------------------------------------
+APPENDIX H
+Internal Names Of Processors
+ 
+(Intel)
+P9	i386SX
+P4	i486DX
+P4S	i486SX
+P23S	i487SX
+P23T	OverDrive for PGA(169)
+P4T	OverDrive for PGA(168)
+P24S	i486DX2
+P24T	Pentium OverDrive for  i486DX2 socket 3 (Vcc=5V,core=3V).
+P24CT	Pentium OverDrive for Socket 3 (Vcc=3V)
+P5	Pentium-60,66
+P54C	Pentium-90,100,75 x1.5 with APIC and Multiprocessing features
+P55C	Bugfix P54C with clock 133,150,2.5V
+P24C	IntelDX4
+P24D	i486DX2 with WB cache (IntelDX2 (tm) WriteBack Enhanced)
+P54M	Overdrive ( include to P54C but P54C work too)
+P6	??????	(no comments)
+P7	??????	(no comments)
+ 
+(Cyrix)
+M5	Cx486S/S2
+M6	Cx486D/D2
+C6	Cx487D
+M7	Cx486DX/Cx486DX2
+M1	Pentium class CPU: 64bit with 32 Regs,WB 16KB cache
+M1 SC	Hybrid from M1 and M7: new FPU,but only ONE scalar unit,
+	so CPU none superscalar but work faster what M7.
+ 
+ 
+ 
+ 
+ 
+ 
+----------------------------------------------------
+More Info? OK
+ 
+EFLAGS register format
+(C) (P) Potemkins' Hackers Group
+Revision 1.00  23/09/94
+==============================================================================
+ 
+[Pentium P5] [Pentium P54C] [IntelDX4]
+ 
+3322222222 2 2 1 1 1 1 1 1 11 1 1
+1098765432 1 0 9 8 7 6 5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+-----------------------------------------------------
+	   I V V A V R	 N IO O D I T S Z   A	P   C
+0000000000 D I I C M F 0 T PL F F F F F F 0 F 0 F 1 F
+	     P F
+-----------------------------------------------------
+ 
+ 
+ 
+=============================================================================
+ 
+ 
+[i486 SL Enhanced SX,DX,DX2] [IntelSX2]
+[UMC]
+ 
+3322222222 2 2 1 1 1 1 1 1 11 1 1
+1098765432 1 0 9 8 7 6 5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+-----------------------------------------------------
+	   I	 A V R	 N IO O D I T S Z   A	P   C
+0000000000 D 0 0 C M F 0 T PL F F F F F F 0 F 0 F 1 F
+-----------------------------------------------------
+ 
+ 
+=============================================================================
+ 
+ 
+[i486 SX,DX,DX2] [OverDrive] [M5,M6,M7] [AMD Am486DX/DXL/DX2/DXL2 ] etc
+[IBM BL486DX/DX2] [Cx486SLC/DLC/SLC2/DLC2]
+ 
+3322222222 2 2 1 1 1 1 1 1 11 1 1
+1098765432 1 0 9 8 7 6 5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+-----------------------------------------------------
+		 A V R	 N IO O D I T S Z   A	P   C
+0000000000 0 0 0 C M F 0 T PL F F F F F F 0 F 0 F 1 F
+-----------------------------------------------------
+ 
+ 
+==============================================================================
+ 
+[i386 SX,DX,CX,EX]  [AMD Am386 ] [C&T 38600 ] etc
+[IBM 486SLC2]
+ 
+3322222222 2 2 1 1 1 1 1 1 11 1 1
+1098765432 1 0 9 8 7 6 5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+-----------------------------------------------------
+		   V R	 N IO O D I T S Z   A	P   C
+0000000000 0 0 0 0 M F 0 T PL F F F F F F 0 F 0 F 1 F
+-----------------------------------------------------
+ 
+ 
+==============================================================================
+ 
+[i376]
+ 
+3322222222 2 2 1 1 1 1 1 1 11 1 1
+1098765432 1 0 9 8 7 6 5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+-----------------------------------------------------
+		     R	 N IO O D I T S Z   A	P   C
+0000000000 0 0 0 0 0 F 0 T PL F F F F F F 0 F 0 F 1 F
+-----------------------------------------------------
+ 
+===============================================================================
+ 
+[i286 and all clones]
+ 
+1 1 11 1 1
+5 4 32 1 0 9 8 7 6 5 4 3 2 1 0
+------------------------------
+  N IO O D I T S Z   A	 P   C
+0 T PL F F F F F F 0 F 0 F 1 F
+------------------------------
+ 
+ 
+================================================================================
+ 
+[NEC/Sony V20/V30]
+ 
+1 1 1 1 1 1
+5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+-------------------------------
+M	O D I T S Z   A	  P   C
+D 1 1 1 F F F F F F 0 F 0 F 1 F
+-------------------------------
+ 
+ 
+ 
+================================================================================
+ 
+[80x186 ,EA,EB,EC,XL]  [8086/88 and all clones]
+ 
+1 1 1 1 1 1
+5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+-------------------------------
+	O D I T S Z   A	  P   C
+1 1 1 1 F F F F F F 0 F 0 F 1 F
+-------------------------------
+ 
+ 
+==============================================================================
+ 
+ID   - Identification Flag
+VIP  - Virtual Interrupt Pending
+VIF  - Virtual Interrupt Flag
+AC   - Align Check
+VM   - Virtual 8086 Mode
+RF   - Resume Flag
+MD   - Mode Flag
+NT   - Nested Task flag
+IOPL - Input/Output Privelege Level
+OF   - Overflow Flag
+DF   - Direction Flag
+IF   - Interrupt Flag
+TF   - Trap Flag
+SF   - Sign Flag
+ZF   - Zero Flag
+AF   - Auxiliary Carry Flag
+PF   - Parity Flag
+CF   - Carry Flag
+ 
+ 
+ 
+==============================================================================
+CR0 register format
+(C) (P) Potemkins' Hackers Group
+Revision 1.00	 23/02/95
+==============================================================================
+ 
+[Pentium P5] [Pentium P54C]
+ 
+3 3 2 2222222221 1 1 1 111111
+1 0 9 8765432109 8 7 6 5432109876 5 4 3 2 1 0
+---------------------------------------------
+P C N		 A   W		  N   T E M P
+G D W 0000000000 M 0 P 0000000000 E 1 S M P E
+ 
+---------------------------------------------
+ 
+ 
+ 
+=============================================================================
+ 
+[IntelDX4] [486DX/DX2, IntelDX4 ]
+ 
+ 
+3 3 2 2222222221 1 1 1 111111
+1 0 9 8765432109 8 7 6 5432109876 5 4 3 2 1 0
+---------------------------------------------
+P C N		 A   W		      T	  M P
+G D W 0000000000 M 0 P 0000000000 * 1 S 1 P E
+ 
+---------------------------------------------
+ 
+==============================================================================
+ 
+ 
+ 
+[Cx486SLC]
+ 
+ 
+3 3 2 2222222221 1 1 1 111111
+1 0 9 8765432109 8 7 6 5432109876 5 4 3 2 1 0
+---------------------------------------------
+P C		 A   W		      T E M P
+G D 0 0000000000 M 0 P 0000000000 0 1 S M P E
+ 
+---------------------------------------------
+ 
+==============================================================================
+ 
+[Cx486DLC]
+ 
+ 
+3 3 2 2222222221 1 1 1 111111
+1 0 9 8765432109 8 7 6 5432109876 5 4 3 2 1 0
+---------------------------------------------
+P C N		 A   W		    E T E M P
+G D W 0000000000 M 0 P 0000000000 0 T S M P E
+ 
+---------------------------------------------
+ 
+==============================================================================
+ 
+ 
+ 
+[Intel i486SX,SX2]
+ 
+ 
+3 3 2 2222222221 1 1 1 111111
+1 0 9 8765432109 8 7 6 5432109876 5 4 3 2 1 0
+---------------------------------------------
+P C N		 A   W		      T E M P
+G D W 0000000000 M 0 P 0000000000 * 1 S M P E
+ 
+---------------------------------------------
+ 
+==============================================================================
+ 
+[IBM 486SLC2]
+ 
+ 
+3 32222222222111 1 111111
+1 09876543210987 6 54321098765 4 3 2 1 0
+---------------------------------------------
+P		 W		 T E M P
+G 00000000000000 P 0000000000  1 S M P E
+ 
+---------------------------------------------
+ 
+==============================================================================
+ 
+[Intel i386SX]
+ 
+ 
+3 322222222221111111111
+1 09876543210987654321098765 4 3 2 1 0
+---------------------------------------------
+P			       T E M P
+G 0000000000000000000000000  1 S M P E
+---------------------------------------------
+ 
+==============================================================================
+ 
+ 
+[Intel i386DX]
+ 
+ 
+3 322222222221111111111
+1 09876543210987654321098765 4 3 2 1 0
+---------------------------------------------
+P			     E T E M P
+G 0000000000000000000000000  T S M P E
+---------------------------------------------
+ 
+==============================================================================
+ 
+[80286]
+ 
+Note: None CR0, but MSW
+ 
+111111
+543210987654 3 2 1 0
+---------------------
+	     T E M P
+000000000000 S M P E
+---------------------
+ 
+==============================================================================
+ 
+ 
+PE - Protection Enable
+MP - Monitor Processor
+EM - Emulation
+TS - Task Switch
+ET - Extention Type
+NE - Numeric Exception
+WP - Write protect
+AM - Align Mode
+NW - No Write
+CD - Cache Disable
+PG - Paging
+ 
+==============================================================================
+CR4 register format
+(C) (P) Potemkins' Hackers Group
+Revision 1.00	 23/09/94
+==============================================================================
+ 
+[Pentium P5] [Pentium P54C]
+ 
+3322222222221111111111
+1098765432109876543210987 6 5 4 3 2 1 0
+---------------------------------------
+			  M   P D T P V
+0000000000000000000000000 C 0 S E S V M
+			  E   E	  D I E
+----------------------------------------
+ 
+ 
+ 
+=============================================================================
+ 
+[IntelDX4] [486s SL Enhanced]
+ 
+3322222222221111111111
+109876543210987654321098765432 1 0
+----------------------------------
+			       P V
+000000000000000000000000000000 V M
+			       I E
+----------------------------------
+ 
+ 
+==============================================================================
+ 
+ 
+MCE - Machine Check Enable
+PSE - Page Size Extention
+DE  - Debbuging Expection
+TSD - Time Stamp Disable
+PVI - Protected mode Virtual Interrupt
+VME - Virtual Mode Exception
+ 
+---------------------------------------------
+APPENDIX LAST
+List of the Literature
+ 
+ 
+1) "Pentium (tm) Famaly User's Manual
+    Volume 3: Architecture and Programming Manual"
+   // Intel Corp. 1994
+   ;; Order number: 241430
+ 
+2) "Blue Lightning 486DX2 3 and 5 Volt Microprocessors
+    Databook"
+   // IBM Corp./Cyrix Corp. 1994
+   ;; Order Number: MPIDX2DSU-01
+ 
+3) "486SLC2 (tm) Microprocessor"
+   Data Sheet.
+   // IBM Corp. 1993
+   ;; Order number VT05452
+ 
+4) "Cyrix Cx486SLC (tm) Microprocessor"
+   // Cyrix Corp. 1991
+   ;; Order Number 94073
+ 
+5)  "3-Volt System Logic for Personal Computers"
+    // Advanced Micro Devices Inc. 1993
+    ;; Order number: 17028B
+ 
+6)  "IntelDX4 (tm) Processor Data Book"
+    // Intel Corp. 1994
+    ;; Order number: 241944
+ 
+7)  "Intel Processor Identification with the
+     CPUID instruction"
+    // Intel Corp. 1993,1994
+    ;; Order number: 241618
+ 
+8)  "82489DX Advanced Programmable Interrupt
+     Controller"
+    Application Note: AP-485
+    // Intel Corp. 1993
+    ;; Order number: 290446
+ 
+9)  "Optimization for Intel's 32-bit Processors"
+    Application Note: AP-500
+    // Intel Corp. 1993
+    ;; Order number 241799
+ 
+A)  "MultiProcessor Specification Version 1.1"
+    // Intel Corp. 1993
+    ;; Order Number: 242016
+ 
+ 
+----------------------------------------------------------
+If Your (Reader) interested for some info about 80x86 CPUs
+lets send request to
+		      avp@iron.misa.ac.ru
+and we place some information in next versions of our doc,
+or answer directly if we can.
+-----------------------------------------------------------
+If Your found some errors or incorrections in this text
+please	send info 'bout it.
+-----------------------------------------------------------
+Thanx for  Alex A.Afonasov,Yury V.Temkin,
+	   and all other numbers of
+	   Potemkin's Hackers Group.
+	   - - - - - - - - - - - - - -
+Special Thanks for  Alex (DVM).
+------------------------------------------------------------
+Sorry, But EOF
+
+------------------------------------------------------------------------
+
+IRB
+University of Magdeburg
+PSF 4120
+D 39016 Magdeburg, Germany
+
