@@ -19,9 +19,8 @@ volatile u8 dsFrm = 0;
 volatile u8 FPS = 0;
 
 	// VBlank IRQ to count FPS
-void handleVBlank()
-{
-	++dsFrm;
+void handleVBlank() {
+	dsFrm += 1;
 
 		// ~60Hz
 	if(dsFrm > 59) {
@@ -30,70 +29,71 @@ void handleVBlank()
 	}
 }
 
-void videoInit(void)
-{
-	int i=0, j;
-
-		// Power up
+void videoInit(void) {
+	// Power up
 	powerOn(POWER_ALL_2D);
 
-		// Bottom screen for text
+	// Bottom screen for text
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 
-		// Set up VRAM banks
+	// Set up VRAM banks
 	vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
 	vramSetBankC(VRAM_C_SUB_BG_0x06200000);
 
-		// Clearing VRAM for M3/SC/G6 - size of two tile bases (32Kbyte)
-	memset((u16*)0x06000000, 0, 32 << 10);
+	// Clearing VRAM for M3/SC/G6 - size of two tile bases (32Kbyte)
+	memset(BG_BMP_RAM(0), 0, 32 << 10);
 
-		// Set up BGs with permenent option
-	*(vu16*)0x04000008 = 31 << 8 | 0x03; // BG
-	*(vu16*)0x0400000A = 30 << 8 | 0x01; // FB
+	// Set up BGs with permenent option
+	REG_BG0CNT = BG_MAP_BASE(31) | BG_TILE_BASE(0) | BG_PRIORITY_3; // BG
+	REG_BG1CNT = BG_MAP_BASE(30) | BG_TILE_BASE(0) | BG_PRIORITY_1; // FB
 
-		// First time offsets
-	*(vu16*)0x04000010 = 240;
-	*(vu16*)0x04000012 = 232;
-	*(vu16*)0x04000014 = 240;
-	*(vu16*)0x04000016 = 232;
+	// First time offsets
+	REG_BG0HOFS = 240;
+	REG_BG0VOFS = 232;
+	REG_BG1HOFS = 240;
+	REG_BG1VOFS = 232;
 
-		// Setting up border
-	*(vu16*)0x0400000E = 2 << 2 | 29 << 8;
+	// Setting up border
+	REG_BG3CNT = BG_MAP_BASE(29) | BG_TILE_BASE(2) | BG_PRIORITY_0;
 
-		// Filling a tile
-	for(; i<0x10; ++i) *((u16*)0x06008000 + i) = ~0;
-	for(i=2; i<30; ++i) for(j=3; j<21; ++j)  ((u16*)0x0600E800)[i + (j << 5)] = 1;
+	// Filling a tile
+	memset(BG_TILE_RAM(2), ~0, 0x20);
 
-		// Apply blending at full black on BG3 (Protects palettes changes)
-	*(vu16*)0x04000050 = 3 << 6 | 1 << 3 | 1 << 13;
-	*(vu16*)0x04000054 = ~0;
+	for(int i=2; i<30; ++i) {
+		for(int j=3; j<21; ++j) {
+			BG_MAP_RAM(29)[i + (j << 5)] = 1;
+		}
+	}
 
-		// sub screen, text.
-	REG_BG0CNT = BG_MAP_BASE(31);
-	dmaCopy(font_bin, (u16*)BG_TILE_RAM_SUB(0), font_bin_size);
-	BG_PALETTE_SUB[1] = ~0;
-	BG_PALETTE_SUB[17] = 0x03E0;
+	// Apply blending at full black on BG3 (Protects palettes changes)
+	REG_BLDCNT = BLEND_FADE_BLACK | BLEND_SRC_BG3 | BLEND_DST_BACKDROP;
+	REG_BLDY = 0xFFFF;
 
-		// Init IRQ
+	// Sub screen menu text
+	REG_BG0CNT_SUB = BG_MAP_BASE(31) | BG_TILE_BASE(0) | BG_PRIORITY_0;
+	dmaCopyAsynch(font_bin, (u16*)BG_TILE_RAM_SUB(0), font_bin_size);
+	BG_PALETTE_SUB[1]  = RGB15(0x1F, 0x1F, 0x1F);
+	BG_PALETTE_SUB[17] = RGB15(0x00, 0x1F, 0x00);
+
+	// Init IRQ
 	irqInit();
 	irqEnable(IRQ_VBLANK);
 	irqSet(IRQ_VBLANK, handleVBlank);
 }
 
-int main()
-{
-		// Init DS Video mode
+int main() {
+	// Init DS Video mode
 	videoInit();
 
-		// Init FAT drivers
+	// Init FAT drivers
 	FAT_InitFiles();
 
-		// File menu
+	// File menu
 	handleFileMenu();
 
 	while(1) {
-			// Execute a frame
+		// Execute a frame
 		while( !wsExecuteLine() );
 
 		printText(0, 1, 1, "FPS: %3d", FPS);
