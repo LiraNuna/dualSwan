@@ -28,7 +28,7 @@ INCLUDES	:=	include
 ARCH	:=	-mthumb -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -O2 -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH)
-CFLAGS	+=	$(INCLUDE) -DARM9
+CFLAGS	+=	$(INCLUDE) -DARM9 -std=gnu99
 CXXFLAGS:= $(CFLAGS)
 
 ASFLAGS	:=	-g $(ARCH)
@@ -102,6 +102,8 @@ clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).nds $(TARGET).arm9 $(TARGET).ds.gba
 
+run: $(BUILD)
+	desmume $(TARGET).nds
 
 #---------------------------------------------------------------------------------
 else
