@@ -1,5 +1,5 @@
 /*
-	io_scsd.h 
+	io_scsd.h
 
 	Hardware Routines for reading a Secure Digital card
 	using the Supercard SD

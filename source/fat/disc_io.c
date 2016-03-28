@@ -5,7 +5,7 @@
 	uniformed io-interface to work with Chishm's FAT library
 
 	Written by MightyMax
-  
+
 	Modified by Chishm:
 	2005-11-06
 		* Added WAIT_CR modifications for NDS
@@ -76,7 +76,7 @@ LPIO_INTERFACE active_interface = 0;
 
 	Disc Cache functions
 	2006-02-03:
-		Added by www.neoflash.com 
+		Added by www.neoflash.com
 
 */
 
@@ -85,7 +85,7 @@ LPIO_INTERFACE active_interface = 0;
 #include <string.h>
 
 #define CACHE_FREE 0xFFFFFFFF
-	
+
 static u8 cacheBuffer[ DISC_CACHE_COUNT * 512 ];
 
 static struct {
@@ -96,20 +96,20 @@ static struct {
 
 static u32 disc_CacheFind(u32 sector) {
 	u32 i;
-	
+
 	for( i = 0; i < DISC_CACHE_COUNT; i++ )	{
 		if( cache[ i ].sector == sector )
 			return i;
 	}
-	
+
 	return CACHE_FREE;
 }
 
 static u32 disc_CacheFindFree(void) {
-	
+
 	u32 i = 0, j;
 	u32 count = -1;
-	
+
 	for( j = 0; j < DISC_CACHE_COUNT; j++ )	{
 
 		if( cache[ j ].sector == CACHE_FREE ) {
@@ -122,7 +122,7 @@ static u32 disc_CacheFindFree(void) {
 			i = j;
 		}
 	}
-	
+
 	if( cache[ i ].sector != CACHE_FREE && cache[i].dirty != 0 ) {
 
 		active_interface->fn_WriteSectors( cache[ i ].sector, 1, &cacheBuffer[ i * 512 ] );
@@ -324,7 +324,7 @@ bool disc_setDsSlotInterface (void)
 #endif
 
 
-bool disc_Init(void) 
+bool disc_Init(void)
 {
 #ifdef DISC_CACHE
 	disc_CacheInit();
@@ -348,15 +348,15 @@ bool disc_Init(void)
 	// could not find a working IO Interface
 	active_interface = 0 ;
 	return false ;
-} 
+}
 
-bool disc_IsInserted(void) 
+bool disc_IsInserted(void)
 {
 	if (active_interface) return active_interface->fn_IsInserted() ;
 	return false ;
-} 
+}
 
-bool disc_ReadSectors(u32 sector, u8 numSecs, void* buffer) 
+bool disc_ReadSectors(u32 sector, u8 numSecs, void* buffer)
 {
 #ifdef DISC_CACHE
 	u8 *p=(u8*)buffer;
@@ -373,9 +373,9 @@ bool disc_ReadSectors(u32 sector, u8 numSecs, void* buffer)
 	if (active_interface) return active_interface->fn_ReadSectors(sector,numSecs,buffer) ;
 	return false ;
 #endif
-} 
+}
 
-bool disc_WriteSectors(u32 sector, u8 numSecs, void* buffer) 
+bool disc_WriteSectors(u32 sector, u8 numSecs, void* buffer)
 {
 #ifdef DISC_CACHE
 	u8 *p=(u8*)buffer;
@@ -392,15 +392,15 @@ bool disc_WriteSectors(u32 sector, u8 numSecs, void* buffer)
 	if (active_interface) return active_interface->fn_WriteSectors(sector,numSecs,buffer) ;
 	return false ;
 #endif
-} 
+}
 
-bool disc_ClearStatus(void) 
+bool disc_ClearStatus(void)
 {
 	if (active_interface) return active_interface->fn_ClearStatus() ;
 	return false ;
-} 
+}
 
-bool disc_Shutdown(void) 
+bool disc_Shutdown(void)
 {
 #ifdef DISC_CACHE
 	disc_CacheFlush();
@@ -408,7 +408,7 @@ bool disc_Shutdown(void)
 	if (active_interface) active_interface->fn_Shutdown() ;
 	active_interface = 0 ;
 	return true ;
-} 
+}
 
 u32	disc_HostType (void)
 {
@@ -418,4 +418,3 @@ u32	disc_HostType (void)
 		return 0;
 	}
 }
-

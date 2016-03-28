@@ -1,5 +1,5 @@
 /*
-	io_mpcf.h 
+	io_mpcf.h
 
 	Hardware Routines for reading a compact flash card
 	using the GBA Movie Player

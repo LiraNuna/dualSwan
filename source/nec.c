@@ -573,76 +573,76 @@ static unsigned (*GetEA[192])(void)={
 };
 
 static struct {
-		
+
 	struct {
 		WREGS w[256];
 		BREGS b[256];
 	} reg;
-		
+
 	struct {
 		WREGS w[256];
 		BREGS b[256];
-	} RM;	
-		
+	} RM;
+
 } Mod_RM;
-		
+
 static int no_interrupt;
 static unsigned char parity_table[256];
-		
+
 		// Functions
-		
+
 void nec_reset (void *param)
 {
 	u32 i, j, c;
 	BREGS reg_name[8] = { AL, CL, DL, BL, AH, CH, DH, BH };
-		
+
 	memset( &I, 0, sizeof(I) );
-		
+
 	no_interrupt = 0;
 	I.sregs[CS] = 0xFFFF;
-		
+
 	for (i=0; i<256; ++i) {
 		for (j=i, c=0; j>0; j>>=1)
 			c += j & 0x01;
-			
+
 		parity_table[i] = !(c & 1);
 	}
-		
+
 	I.ZeroVal = I.ParityVal = 1;
 	I.MF = 1;
-		
+
     for (i = 0; i < 256; i++) {
 		Mod_RM.reg.b[i] = reg_name[(i & 0x38) >> 3];
 		Mod_RM.reg.w[i] = (WREGS)( (i & 0x38) >> 3) ;
     }
-		
+
 	for (i = 0xc0; i < 0x100; i++) {
 		Mod_RM.RM.w[i] = (WREGS)( i & 7 );
 		Mod_RM.RM.b[i] = (BREGS)reg_name[i & 7];
 	}
-		
+
 	I.regs.w[SP] = 0x2000;
 }
 
 void nec_int(unsigned long wektor)
 {
 	u32 dest_seg, dest_off;
-		
+
 	if(I.IF) {
 		i_pushf();
 		I.TF = I.IF = 0;
-			
+
 		dest_off = cpuReadByte(wektor) | cpuReadByte((wektor)+1) << 8;
 		dest_seg = cpuReadByte(wektor + 2) | cpuReadByte(wektor + 3) << 8;
-			
+
 		I.regs.w[SP] -= 2;
 		cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP], I.sregs[CS]);
 		cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP] + 1, I.sregs[CS] >> 8);
-			
+
 		I.regs.w[SP] -= 2;
 		cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP], I.ip);
 		cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP] + 1, I.ip >> 8);
-			
+
 		I.ip = dest_off;
 		I.sregs[CS] = dest_seg;
 	}
@@ -651,26 +651,26 @@ void nec_int(unsigned long wektor)
 static void nec_interrupt(unsigned int_num,int md_flag)
 {
 	u32 dest_seg, dest_off;
-		
+
 	if (int_num == -1)
 		return;
-		
+
 	i_pushf();
 	I.TF = I.IF = 0;
-		
+
 	dest_off = cpuReadByte(int_num << 2) | cpuReadByte((int_num << 2) + 1) << 8;
 	dest_seg = cpuReadByte((int_num << 2) + 2) | cpuReadByte(((int_num << 2) + 3) << 8);
-		
+
 	I.regs.w[SP] -= 2;
-		
+
 	cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP], I.sregs[CS]);
 	cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP] + 1, I.sregs[CS] >> 8);
-		
+
 	I.regs.w[SP] -= 2;
-		
+
 	cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP], I.ip);
 	cpuWriteByte((I.sregs[SS] << 4) + I.regs.w[SP] + 1, I.ip >> 8);
-		
+
 	I.ip = dest_off & 0xFFFF;
 	I.sregs[CS] = dest_seg & 0xFFFF;
 }
@@ -680,14 +680,14 @@ static void i_add_br8(void)
 	u32 ModRM = cpuReadByte((I.sregs[CS] << 4) + I.ip++), src, dst;
 	src = I.regs.b[Mod_RM.reg.b[ModRM]];
 	dst = (ModRM) >= 0xC0 ? I.regs.b[Mod_RM.RM.b[ModRM]] : cpuReadByte((*GetEA[ModRM])());
-		
+
 	u32 res = dst + src;
 	I.CarryVal = res & 0x100;
 	I.OverVal = (res ^ src) & (res ^ dst) & 0x80;
 	I.AuxVal = (res ^ (src ^ dst)) & 0x10;
 	I.SignVal = I.ZeroVal = I.ParityVal = (s8)res;
 	dst = res & 0xFF;
-		
+
 	if(ModRM >= 0xC0) {
 		I.regs.b[Mod_RM.RM.b[ModRM]] = dst;
 		nec_ICount -= 1;
@@ -702,14 +702,14 @@ static void i_add_wr16(void)
 	u32 ModRM = (cpuReadByte((I.sregs[CS]<<4)+I.ip++)),src,dst;
 	src = I.regs.w[Mod_RM.reg.w[ModRM]];
 	dst = ((ModRM) >= 0xc0 ? I.regs.w[Mod_RM.RM.w[ModRM]] : ( (*GetEA[ModRM])(), (cpuReadByte(EA) | (cpuReadByte((EA)+1)<<8)) ));
-		
+
 	u32 res = dst + src;
 	I.CarryVal = res & 0x10000;
 	I.OverVal = (res ^ src) & (res ^ dst) & 0x8000;
 	I.AuxVal = (res ^ (src ^ dst)) & 0x10;
 	I.SignVal = I.ZeroVal = I.ParityVal = (signed short)res;
 	dst = res & 0xFFFF;
-		
+
 	if(ModRM >= 0xc0) {
 		I.regs.w[Mod_RM.RM.w[ModRM]]=dst;
 		nec_ICount -= 1;
@@ -1311,9 +1311,9 @@ static void i_invalid(void)
 int nec_execute(int cycles)
 {
 	nec_ICount = cycles;
-		
+
 	while(nec_ICount > 0)
 		nec_instruction[(cpuReadByte((I.sregs[CS]<<4)+I.ip++))]();
-		
+
 	return cycles - nec_ICount;
 }

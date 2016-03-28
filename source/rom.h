@@ -40,7 +40,7 @@ typedef struct ws_romHeaderStruct
 	u8 additionnalCapabilities;
 	u8 RTC;
 	u16 checkSum;
-		
+
 } PACKED romHeader, *pRomHeader;
 
 extern FAT_FILE* wsRom;

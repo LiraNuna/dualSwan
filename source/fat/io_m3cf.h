@@ -1,5 +1,5 @@
 /*
-	io_m3cf.h 
+	io_m3cf.h
 
 	Hardware Routines for reading a compact flash card
 	using the M3 CF

@@ -3,7 +3,7 @@
 
 extern	u8 gpuCurScanline;
 extern	bool gpuIsColor;
-		
+
 void gpuInit();
 void gpuReset();
 void gpuReset();

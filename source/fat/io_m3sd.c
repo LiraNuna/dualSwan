@@ -60,12 +60,12 @@ bool M3SD_read1sector(u32 sectorn,u32 TAddr)
 {
 	u32 i;
 	int w;
-	
-	SDCON=0x8;		//	bit3:ƒRƒ}ƒ“ƒhƒ‚[ƒhH
-	SDIDA1=0x40+17;		//	ƒRƒ}ƒ“ƒh CMD17
-	SDIDA2=(sectorn>>7);//	ƒZƒNƒ^H 9ƒrƒbƒg=ƒAƒhƒŒƒXH ‚P‚Uƒrƒbƒg
-	SDIDA3=(sectorn<<9);//	ƒZƒNƒ^L 7ƒrƒbƒg=ƒAƒhƒŒƒXL ‚P‚Uƒrƒbƒg
-	SDDIR=0x29;		//	ƒRƒ}ƒ“ƒh‘—MH
+
+	SDCON=0x8;		//	bit3:ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½[ï¿½hï¿½H
+	SDIDA1=0x40+17;		//	ï¿½Rï¿½}ï¿½ï¿½ï¿½h CMD17
+	SDIDA2=(sectorn>>7);//	ï¿½Zï¿½Nï¿½^H 9ï¿½rï¿½bï¿½g=ï¿½Aï¿½hï¿½ï¿½ï¿½XH ï¿½Pï¿½Uï¿½rï¿½bï¿½g
+	SDIDA3=(sectorn<<9);//	ï¿½Zï¿½Nï¿½^L 7ï¿½rï¿½bï¿½g=ï¿½Aï¿½hï¿½ï¿½ï¿½XL ï¿½Pï¿½Uï¿½rï¿½bï¿½g
+	SDDIR=0x29;		//	ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½Mï¿½H
 	i=0;
 
 	while ( ((SDSTA&0x01) != 0x01)&&(i < CARD_TIMEOUT) )
@@ -80,7 +80,7 @@ bool M3SD_read1sector(u32 sectorn,u32 TAddr)
 		i++;
 	}
 	SDDIR=0x09;
-		
+
 	SDDIR=0x8;//cmd input clken=0 datadir input clock=0
 	SDCON=0x4;//send=0 get=0 en25=1 cmd1=0
 
@@ -91,13 +91,13 @@ bool M3SD_read1sector(u32 sectorn,u32 TAddr)
 	}
 	w = SDDIR;
 	w = SDDIR;
-	
+
 	if (i >= CARD_TIMEOUT)
 		return false;
 
 	return true;
-	
-} 
+
+}
 //==================================================
 
 
@@ -106,7 +106,7 @@ bool M3SD_write1sector(u32 sectorn,u32 TAddr)
 {
 	u32 i;
 	int w;
-	
+
 	SDCON=0x8;
 	SDIDA1=0x40+0x18;// CMD24=write
 	SDIDA2=(sectorn>>7);
@@ -125,7 +125,7 @@ bool M3SD_write1sector(u32 sectorn,u32 TAddr)
 		i++;
 	}
 	SDDIR=0x09;
-		
+
 	SDDIR=0x8;//cmd input clken=0 datadir input clock=0
 	SDCON=0x4;//send=0 get=0 en25=1 cmd1=0
 
@@ -135,7 +135,7 @@ bool M3SD_write1sector(u32 sectorn,u32 TAddr)
 	{
 		SDDIR = *(u16*)(TAddr+w*2);
 	}
-	//‘‚«‚İŠ®—¹‚ğ‘Ò‚Â != 0x00
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İŠï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò‚ï¿½ != 0x00
 	while ( ( (SDSTA&0xFF) == 0x00)&&(i < CARD_TIMEOUT) )
 	{
 		i++;
@@ -145,8 +145,8 @@ bool M3SD_write1sector(u32 sectorn,u32 TAddr)
 		return false;
 
 	return true;
-	
-} 
+
+}
 //==================================================
 
 
@@ -165,7 +165,7 @@ M3SD_IsInserted
 Is a compact flash card inserted?
 bool return OUT:  true if a CF card is inserted
 -----------------------------------------------------------------*/
-bool M3SD_IsInserted (void) 
+bool M3SD_IsInserted (void)
 {
 	u16 sta;
 	// Change register, then check if value did change
@@ -182,7 +182,7 @@ M3SD_ClearStatus
 Tries to make the CF card go back to idle mode
 bool return OUT:  true if a CF card is idle
 -----------------------------------------------------------------*/
-bool M3SD_ClearStatus (void) 
+bool M3SD_ClearStatus (void)
 {
 
 //	int i=SDDIR;
@@ -279,7 +279,7 @@ M3_Unlock
 Returns true if M3 was unlocked, false if failed
 Added by MightyMax
 -----------------------------------------------------------------*/
-bool M3SD_Unlock(void) 
+bool M3SD_Unlock(void)
 {
 
 	// run unlock sequence

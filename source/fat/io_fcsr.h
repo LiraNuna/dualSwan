@@ -1,5 +1,5 @@
 /*
-	io_fcsr.h 
+	io_fcsr.h
 
 	Hardware Routines for using a GBA Flash Cart with SRAM
 

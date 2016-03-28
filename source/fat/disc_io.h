@@ -7,7 +7,7 @@
 // Use DMA to read the card, remove this line to use normal reads/writes
 // #define _CF_USE_DMA
 
-// Allow buffers not alligned to 16 bits when reading files. 
+// Allow buffers not alligned to 16 bits when reading files.
 // Note that this will slow down access speed, so only use if you have to.
 // It is also incompatible with DMA
 #define _CF_ALLOW_UNALIGNED
@@ -52,7 +52,7 @@
 #endif
 
 // Disable NDS specific hardware and features if running on a GBA
-#ifndef NDS 
+#ifndef NDS
  #undef SUPPORT_NMMC
  #undef DISC_CACHE
 #endif

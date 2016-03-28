@@ -1,12 +1,12 @@
 /*
-	io_scsd.c 
+	io_scsd.c
 
 	By chishm (Michael Chisholm)
 
 	Hardware Routines for reading a secure digital card
 	using the SuperCard
 
-	SD routines based on sd.s by Romman 
+	SD routines based on sd.s by Romman
 
 	This software is completely free. No warranty is provided.
 	If you use it, please give me credit and email me about your
@@ -51,14 +51,14 @@ u8 SCSD_CRC7(u8* data, int cnt)
     }
     crc = (crc << 1) | 1;
     return(crc);
-} 
+}
 
 void SCSD_WriteCommand (u8* src, int length)
 {
 	u16 dataByte;
 	int curBit;
 	while ((SD_COMADD & 0x01) == 0);
-		
+
 	dataByte = SD_COMADD;
 
 	do {
@@ -68,7 +68,7 @@ void SCSD_WriteCommand (u8* src, int length)
 			dataByte = dataByte << 1;
 		}
 	} while (length--);
-	
+
 	return;
 }
 
@@ -93,13 +93,13 @@ void SCSD_ReadCommand(u16* buff, int length)
 	u16 temp;
 
 	while (SD_COMADD & 0x01);
-	
+
 	length = length * 8;
-	
+
 	do {
 		temp = SD_COMADD;
 	} while (length--);
-	
+
 	return;
 }
 
@@ -109,12 +109,12 @@ void SCSD_GetResp(void)
 }
 
 void SCSD_SendClock(int numClocks)
-{	
+{
 	u16 temp;
 	do {
 		temp = SD_COMADD;
 	} while (numClocks--);
-}	
+}
 
 
 void SCSD_ReadData(u16 *buff)
@@ -122,21 +122,21 @@ void SCSD_ReadData(u16 *buff)
 	u16 temp;
 	u32 data_1, data_2;
 	int i;
-	
+
 	while (SD_DATARADD_16 & SD_STS_BUSY);
-			
+
 	for (i = 0; i < 512; i+=2) {
 		data_1 = SD_DATARADD_32;
 		data_2 = SD_DATARADD_32;
 		*buff++ = data_2 >> 16;
 	}
-	
+
 	for (i = 0; i < 8; i++) {
 		data_2 = SD_DATARADD_32;
 	}
-	
+
 	temp = SD_DATARADD_16;
-	
+
 	return;
 }
 
@@ -152,53 +152,53 @@ void SCSD_CRC16 (u8* buff, int buffLength, u8* crc16buff)
 	b = 0;	// r4
 	c = 0;	// r5
 	d = 0;	// r6
-	
+
 	buffLength = buffLength * 8;
-	
-	
+
+
 	do {
 		if (bitPattern & 0x80) dataByte = *buff++;
-		
+
 		a = a << 1;
 		if ( a & 0x10000) a ^= crcConst;
 		if (dataByte & (bitPattern >> 24)) a ^= crcConst;
-		
+
 		b = b << 1;
 		if (b & 0x10000) b ^= crcConst;
 		if (dataByte & (bitPattern >> 25)) b ^= crcConst;
-	
+
 		c = c << 1;
 		if (c & 0x10000) c ^= crcConst;
 		if (dataByte & (bitPattern >> 26)) c ^= crcConst;
-		
+
 		d = d << 1;
 		if (d & 0x10000) d ^= crcConst;
 		if (dataByte & (bitPattern >> 27)) d ^= crcConst;
-		
+
 		bitPattern = (bitPattern >> 4) | (bitPattern << 28);
 	} while (buffLength-=4);
-	
+
 	count = 16;	// r8
-	
+
 	do {
 		bitPattern = bitPattern << 4;
 		if (a & 0x8000) bitPattern |= 8;
 		if (b & 0x8000) bitPattern |= 4;
 		if (c & 0x8000) bitPattern |= 2;
 		if (d & 0x8000) bitPattern |= 1;
-	
+
 		a = a << 1;
 		b = b << 1;
 		c = c << 1;
 		d = d << 1;
-		
+
 		count--;
-		
+
 		if (!(count & 0x01)) {
 			*crc16buff++ = (u8)(bitPattern & 0xff);
 		}
 	} while (count != 0);
-	
+
 	return;
 }
 
@@ -208,33 +208,33 @@ void SCSD_WriteData (u16 *buff, u16* crc16buff)
 	u16 dataHWord;
 	u16 temp;
 	while (SD_DATAADD & SD_STS_BUSY);
-		
+
 	temp = SD_DATAADD;
-	
+
 	SD_DATAADD = 0;		// start bit;
-		
+
 	for ( pos = BYTE_PER_READ; pos != 0; pos -=2) {
 		dataHWord = *buff++;
-		
+
 		SD_DATAADD = dataHWord;
 		SD_DATAADD = dataHWord << 4;
 		SD_DATAADD = dataHWord << 8;
 		SD_DATAADD = dataHWord << 12;
 	}
-	
+
 	if (crc16buff != 0) {
 		for ( pos = 8; pos != 0; pos -=2) {
 			dataHWord = *crc16buff++;
-			
+
 			SD_DATAADD = dataHWord;
 			SD_DATAADD = dataHWord << 4;
 			SD_DATAADD = dataHWord << 8;
 			SD_DATAADD = dataHWord << 12;
 		}
 	}
-	
+
 	SD_DATAADD = 0xff;		// end bit
-	
+
 	while (SD_DATAADD & 0x100);
 
 	temp = SD_DATAADD;
@@ -250,7 +250,7 @@ SCSD_IsInserted
 Is a secure digital card inserted?
 bool return OUT:  true if a CF card is inserted
 -----------------------------------------------------------------*/
-bool SCSD_IsInserted (void) 
+bool SCSD_IsInserted (void)
 {
 	return ((SD_COMADD & SD_STS_INSERTED) == 0);
 }
@@ -261,7 +261,7 @@ SCSD_ClearStatus
 Tries to make the SD card go back to idle mode
 bool return OUT:  true if a CF card is idle
 -----------------------------------------------------------------*/
-bool SCSD_ClearStatus (void) 
+bool SCSD_ClearStatus (void)
 {
 	return false;
 }
@@ -282,12 +282,12 @@ bool SCSD_ReadSectors (u32 sector, u8 numSecs, void* buffer)
 	maxSectors = (numSecs == 0 ? 256 : numSecs);
 
 	SCSD_Command (18, 0, sector << 9); 	// Read multiple blocks
-	
+
 	for (curSector=0; curSector<maxSectors; curSector++)
 	{
 		SCSD_ReadData((u16*)buffer + (curSector * (BYTE_PER_READ/2)));
 	}
-	
+
 	SCSD_Command (12,0,0); 				// Stop transmission
 	SCSD_GetResp();
 	SCSD_SendClock(0x10);
@@ -313,17 +313,17 @@ bool SCSD_WriteSectors (u32 sector, u8 numSecs, void* buffer)
 
 	sector = sector * BYTE_PER_READ;
 
-	SCSD_Command(25,0,sector); 
+	SCSD_Command(25,0,sector);
 	SCSD_GetResp();
-	SCSD_SendClock(0x10); 
+	SCSD_SendClock(0x10);
 
 	for (curSector=0; curSector<maxSectors; curSector++)
 	{
 		SCSD_CRC16(((u8*)buffer) + (curSector * BYTE_PER_READ), BYTE_PER_READ, (u8*)crc16);
 		SCSD_WriteData(((u16*)buffer) + (curSector * (BYTE_PER_READ/2)), crc16);
-		SCSD_SendClock(0x10); 
+		SCSD_SendClock(0x10);
 	}
-	SCSD_Command(12,0,0); 
+	SCSD_Command(12,0,0);
 	SCSD_GetResp();
 	SCSD_SendClock(0x10);
 	while((SD_DATAADD &0x0100)==0);
@@ -334,7 +334,7 @@ bool SCSD_WriteSectors (u32 sector, u8 numSecs, void* buffer)
 SCSD_Shutdown
 unload the Supercard SD interface
 -----------------------------------------------------------------*/
-bool SCSD_Shutdown(void) 
+bool SCSD_Shutdown(void)
 {
 	return SCSD_ClearStatus() ;
 }
@@ -353,7 +353,7 @@ void SCSD_Mode(u8 mode)
 	*unlockAddress = 0xA55A ;
 	*unlockAddress = mode ;
 	*unlockAddress = mode ;
-} 
+}
 
 /*-----------------------------------------------------------------
 SCSD_StartUp
@@ -368,7 +368,7 @@ bool SCSD_StartUp(void)
 	*p=~*p;
 	if(*p!=0xaaaa5555)
 		return false;
-		
+
 	SCSD_Mode(3);
 	return SCSD_IsInserted();
 }
