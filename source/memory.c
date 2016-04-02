@@ -12,7 +12,8 @@
 u8 *staticRam;
 u8 *internalRam;
 u8 *externalEeprom;
-FAT_FILE* wsRom;
+FILE* wsRom;
+u32 wsRomSize;
 
 u32	sramAddressMask;
 u32	eepromAddressMask;
@@ -52,18 +53,22 @@ u8 cpuReadByte(u32 addr)
 		case 3:
 				// 2 - ROM Bank (initial bank = last)
 				// 3 - ROM Bank (lnitial bank = last)
-			return romGetByte(offset + ((ioPort[0xC0 + bank] & ((romGetSize()>>16)-1)) << 16));
+			return romGetByte(offset + ((ioPort[0xC0 + bank] & ((wsRomSize >> 16)-1)) << 16));
 		default:
 				// Banks 4 - F
 			romBank = 256 - ((ioPort[0xC0] & 0x0F) << 4 | (bank & 0x0F));
-			return romGetByte(offset + romGetSize() - (romBank << 16));
+			return romGetByte(offset + wsRomSize - (romBank << 16));
 	}
 }
 
 void memInit(const char* filename)
 {
 		// Open ROM file
-	wsRom = FAT_fopen(filename, "r");
+	wsRom = fopen(filename, "rb");
+
+	// Cache file size
+	fseek(wsRom, 0, SEEK_END);
+	wsRomSize = ftell(wsRom);
 
 		// Get header
 	pRomHeader RomHeader = romGetHeader();
@@ -77,7 +82,7 @@ void memInit(const char* filename)
 		// Bit masks
 	sramAddressMask = romSramSize() - 1;
 	eepromAddressMask = romEepromSize() - 1;
-	romAddressMask = romGetSize() - 1;
+	romAddressMask = wsRomSize - 1;
 
 		// Game Compatibility
 	gpuIsColor = RomHeader->minimumSupportSystem;

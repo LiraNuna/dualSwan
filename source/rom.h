@@ -1,8 +1,8 @@
 #ifndef __ROM_H__
 #define __ROM_H__
 
+#include <stdio.h>
 #include "types.h"
-#include "fat/gba_nds_fat.h"
 
 #define WS_SYSTEM_MONO			0x00
 #define WS_SYSTEM_COLOR			0x01
@@ -43,7 +43,8 @@ typedef struct ws_romHeaderStruct
 
 } PACKED romHeader, *pRomHeader;
 
-extern FAT_FILE* wsRom;
+extern FILE* wsRom;
+extern u32 wsRomSize;
 extern u8* romBuffer;
 
 pRomHeader romGetHeader();
@@ -51,6 +52,5 @@ void romFillBuffer(u32 offset);
 u32 romSramSize();
 u32 romEepromSize();
 u8 romGetByte(u32 offset);
-u32 romGetSize();
 
 #endif

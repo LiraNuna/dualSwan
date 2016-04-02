@@ -3,25 +3,26 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <sys/dir.h>
+#include <sys/param.h>
+#include <sys/unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
 #include "types.h"
 #include "ws.h"
-#include "fat/gba_nds_fat.h"
-#include "fat/disc_io.h"
 
-	// Text font (I hate libnds')
+// Text font (I hate libnds')
 #include "font_bin.h"
 
-	// Clear
+// Clear
 #define textClear() memset((u16*)BG_MAP_RAM_SUB(31), 0, 32*32*2)
 #define strcasestr(x, y) (strcasecmp(&(x)[strlen(x) - strlen(y)], (y)))
 
-typedef struct
-{
-	char fName[256];
-	FILE_TYPE fType;
+typedef struct {
+	char fName[MAXPATHLEN];
+	bool isDirectory;
 	bool isRunable;
-
 } FileEntry, *pFileEntry;
 
 void printText(int col, int x, int y, const char* fmt, ...);

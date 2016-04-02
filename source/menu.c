@@ -34,14 +34,25 @@ void printText(int col, int x, int y, const char* fmt, ...)
 void fillList()
 {
 	textClear();
-	int curFile = -1;
+	memset(FileList, 0, sizeof(FileList));
 
-	do {
-		curFile += 1;
+	int curFile = 0;
 
-		FileList[curFile].fType  = FAT_FindNextFileLFN(FileList[curFile].fName);
+	struct stat st;
+ 	struct dirent *dp;
+	DIR* dir = opendir(".");
+
+ 	while ((dp = readdir(dir)) != NULL) {
+		stat(dp->d_name, &st);
+
+		strcpy(FileList[curFile].fName, dp->d_name);
+		FileList[curFile].isDirectory = (st.st_mode & S_IFMT) == S_IFDIR;
 		FileList[curFile].isRunable = !strcasestr(FileList[curFile].fName, ".wsc") || !strcasestr(FileList[curFile].fName, ".ws");
-	} while(FileList[curFile].fType != FT_NONE);
+
+		curFile += 1;
+	}
+
+	closedir(dir);
 
 	fileCounter = curFile - 1;
 }
@@ -51,18 +62,17 @@ void printList(u32 startPos)
 	u32 i = startPos;
 
 	textClear();
-	printText(0, 1, 1, "dualSwan v1.2 by LiraNuna\nDetected: %s", (const char*)&active_interface->ul_ioType);
+	printText(0, 1, 1, "dualSwan v1.2 by LiraNuna");
 
 	for(; i < startPos + 18; ++i) {
-		if(FileList[i].fType == FT_DIR)
+		if(FileList[i].isDirectory) {
 			printText(0, 5, 4 + (i-startPos), "<%.26s>", FileList[i].fName);
-		else if(FileList[i].fType == FT_FILE) {
+		} else {
 			if(FileList[i].isRunable)
 				printText(1, 5, 4 + (i-startPos), "%.26s", FileList[i].fName);
 			else
 				printText(0, 5, 4 + (i-startPos), "%.26s", FileList[i].fName);
-		} else
-			break;
+		}
 	}
 }
 
@@ -104,8 +114,8 @@ void handleFileMenu()
 			--virtualFile;
 
 		if(KEYS & KEY_A) {
-			if(FileList[curFile + virtualFile].fType == FT_DIR) {
-				FAT_chdir(FileList[curFile + virtualFile].fName);
+			if(FileList[curFile + virtualFile].isDirectory) {
+				chdir(FileList[curFile + virtualFile].fName);
 				virtualFile = curFile = 0;
 				fillList();
 			} else if(FileList[curFile + virtualFile].isRunable) {

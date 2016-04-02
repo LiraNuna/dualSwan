@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include <nds.h>
+#include <fat.h>
 
 #include "resetmem.h"
 #include "rom.h"
@@ -87,7 +88,7 @@ int main() {
 	videoInit();
 
 	// Init FAT drivers
-	FAT_InitFiles();
+	fatInitDefault();
 
 	// File menu
 	handleFileMenu();
