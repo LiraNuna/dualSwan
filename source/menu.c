@@ -34,15 +34,14 @@ void printText(int col, int x, int y, const char* fmt, ...)
 void fillList()
 {
 	textClear();
-	int curFile = 0;
+	int curFile = -1;
 
-	FileList[curFile].fType = FAT_FindFirstFileLFN(FileList[curFile].fName);
+	do {
+		curFile += 1;
 
-	while(FileList[curFile].fType != FT_NONE) {
-		++curFile;
 		FileList[curFile].fType  = FAT_FindNextFileLFN(FileList[curFile].fName);
 		FileList[curFile].isRunable = !strcasestr(FileList[curFile].fName, ".wsc") || !strcasestr(FileList[curFile].fName, ".ws");
-	}
+	} while(FileList[curFile].fType != FT_NONE);
 
 	fileCounter = curFile - 1;
 }
@@ -56,12 +55,12 @@ void printList(u32 startPos)
 
 	for(; i < startPos + 18; ++i) {
 		if(FileList[i].fType == FT_DIR)
-			printText(0, 5, 4 + (i-startPos), "<%s>", FileList[i].fName);
+			printText(0, 5, 4 + (i-startPos), "<%.26s>", FileList[i].fName);
 		else if(FileList[i].fType == FT_FILE) {
 			if(FileList[i].isRunable)
-				printText(1, 5, 4 + (i-startPos), "%s", FileList[i].fName);
+				printText(1, 5, 4 + (i-startPos), "%.26s", FileList[i].fName);
 			else
-				printText(0, 5, 4 + (i-startPos), "%s", FileList[i].fName);
+				printText(0, 5, 4 + (i-startPos), "%.26s", FileList[i].fName);
 		} else
 			break;
 	}
